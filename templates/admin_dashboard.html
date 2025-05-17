@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        h2 {
+            color: #333;
+        }
+        .comment-actions button {
+            margin-left: 5px;
+        }
+        .comment-box {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h2>게시물 관리</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>제목</th>
+                <th>내용</th>
+                <th>댓글 관리</th>
+                <th>삭제</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for post in posts %}
+                <tr>
+                    <td>{{ post.title }}</td>
+                    <td>{{ post.content }}</td>
+                    <td>
+                        <div class="comment-box">
+                            {% for comment in post.comments %}
+                                <div class="comment">
+                                    <strong>댓글 내용:</strong> {{ comment.text }}<br>
+                                    <strong>작성자:</strong> {{ comment.client_id }} 
+                                    {% if comment.user %}
+                                        ({{ comment.user.full_name }})
+                                    {% else %}
+                                        (작성자 정보 없음)
+                                    {% endif %}
+                                    <br>
+                                    ({{ comment.date.strftime('%Y-%m-%d %H:%M:%S') }})
+                                    <div class="comment-actions">
+                                        <form method="POST" action="{{ url_for('edit_comment', comment_id=comment.id) }}">
+                                            <input type="text" name="new_text" value="{{ comment.text }}" placeholder="댓글 수정" required>
+                                            <button type="submit">수정</button>
+                                        </form>
+                                        
+                                        <form method="POST" action="{{ url_for('delete_comment', comment_id=comment.id) }}">
+                                            <button type="submit" style="background-color: red; color: white;">삭제</button>
+                                        </form>
+                                    </div>
+                                    <hr>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ url_for('delete_post', post_id=post.id) }}">
+                            <button type="submit" style="background-color: red; color: white;">게시물 삭제</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="{{ url_for('index') }}">홈으로 돌아가기</a>
+</body>
+</html>

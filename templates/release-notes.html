@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel='icon' type="images/png" href="https://raw.githubusercontent.com/Anion15/anion15.github.io/refs/heads/main/Preview.png">
+  <title>상정인사이드 릴리즈 노트</title>
+  <meta name="description" content="상정인사이드 커뮤니티는 '정상의 반대'라는 개념을 바탕으로 자유롭고 창의적인 토론을 나누는 공간입니다.">
+  <meta name="keywords" content="커뮤니티, 상정인사이드, 자유로운">
+  <meta name="author" content="anion15">
+  <meta property="og:title" content="상정인사이드">
+  <meta property="og:description" content="정상의 반대말 상정. 자유로운 커뮤니티">
+  <meta property="og:image" content="https://raw.githubusercontent.com/Anion15/anion15.github.io/refs/heads/main/full-logo.png">
+  <meta property="og:url" content="https://anion15.github.io">
+  <meta name="twitter:title" content="상정인사이드">
+  <meta name="twitter:description" content="정상의 반대말 상정. 자유로운 커뮤니티">
+  <meta name="twitter:image" content="https://raw.githubusercontent.com/Anion15/anion15.github.io/refs/heads/main/full-logo.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#3B82F6',
+            darkbg: '#1e293b'
+          }
+        }
+      }
+    }
+  </script>
+</head>
+  <header class="bg-white shadow py-4 px-6 mb-6 flex items-center justify-between">
+    <!-- 왼쪽: 로고 -->
+    <div class="flex items-center space-x-4">
+      <a href="https://anion15.github.io">
+        <img src="https://raw.githubusercontent.com/Anion15/anion15.github.io/refs/heads/main/logo-.png" alt="logo" class="w-28 sm:w-32 md:w-36 lg:w-40 xl:w-44" />
+      </a>
+    </div>
+  
+    <!-- 오른쪽: 버튼 그룹 -->
+    <div class="flex space-x-2">
+      <a href="/info"
+         class="bg-gray-600 hover:bg-blue-600 text-white font-semibold
+                text-sm sm:text-base md:text-sm sm:text-xl
+                py-1 px-2 sm:py-2 sm:px-4 md:py-3 md:px-6 rounded">
+        상정인사이드란?
+      </a>
+      <a href="/history"
+         class="bg-gray-600 hover:bg-blue-600 text-white font-semibold
+                text-sm sm:text-base md:text-sm sm:text-xl
+                py-1 px-2 sm:py-2 sm:px-4 md:py-3 md:px-6 rounded">
+        상정인사이드 역사
+      </a>
+    </div>
+  </header>
+  <body class="bg-gray-100 dark:bg-darkbg text-gray-800 dark:text-gray-100 transition-all">
+
+    <div class="max-w-4xl mx-auto px-6 py-12">
+      <h1 class="text-4xl font-bold text-center mb-10 text-primary">📦 상정인사이드 릴리즈 노트</h1>
+
+      <!-- 릴리즈 카드 컴포넌트 -->
+      <div class="space-y-8">
+
+        <!-- 릴리즈 항목 -->
+        <div class="bg-white dark:bg-gray-800 shadow-md rounded-2xl p-6">
+          <h2 class="text-xl font-semibold mb-2">🗓️ 2025년 4월 25일</h2>
+          <ul class="list-disc list-inside text-gray-700 dark:text-gray-300">
+            <li>🚀 <strong>상정인사이드 서비스 시작</strong></li>
+          </ul>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 shadow-md rounded-2xl p-6">
+          <h2 class="text-xl font-semibold mb-2">🗓️ 2025년 4월 30일</h2>
+          <ul class="list-disc list-inside text-gray-700 dark:text-gray-300">
+            <li>🔐 <strong>보안 코드 추가</strong></li>
+            <li>세션 인증, IP 인증, UUID 및 MAC 주소 기반 인증 등 다양한 방식 도입</li>
+          </ul>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 shadow-md rounded-2xl p-6">
+          <h2 class="text-xl font-semibold mb-2">🗓️ 2025년 5월 1일</h2>
+          <ul class="list-disc list-inside text-gray-700 dark:text-gray-300">
+            <li>📖 <strong>"상정인사이드란?" 소개 서비스 시작</strong></li>
+          </ul>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 shadow-md rounded-2xl p-6">
+          <h2 class="text-xl font-semibold mb-2">🗓️ 2025년 5월 2일</h2>
+          <ul class="list-disc list-inside text-gray-700 dark:text-gray-300">
+            <li>📊 <strong>상정인사이드 역사 서비스 시작</strong></li>
+            <li>총 데이터 전송량 측정 기능 포함 서버 코드 추가</li>
+          </ul>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 shadow-md rounded-2xl p-6">
+          <h2 class="text-xl font-semibold mb-2">🗓️ 2025년 5월 3일</h2>
+          <ul class="list-disc list-inside text-gray-700 dark:text-gray-300">
+            <li>🧱 <strong>모든 서비스 하단에 Footer 추가</strong></li>
+            <li>📱 <strong>모바일 환경 호환성 향상</strong> (너비 511px 이하 대응)</li>
+            <li>🦉 <strong>Footer 상단에 게시물 갯수를 표시하는 기능 추가</strong></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </body>
+  <h1>&nbsp;</h1>
+  <h1>&nbsp;</h1>
+  <h1>&nbsp;</h1>
+
+  <!--새로운 footer-->
+  <footer class="bg-white text-gray-800 py-10 px-5 font-sans border-t border-gray-200">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+      <!-- 소개 -->
+      <div>
+        <h2 class="text-2xl font-bold mb-2">상정인사이드</h2>
+        <p class="text-gray-600">당신의 일상과 생각을 나누는 공간,<br>상정인사이드 커뮤니티입니다.</p>
+      </div>
+
+      <!-- 바로가기 -->
+      <div>
+        <h3 class="text-xl font-semibold mb-2">바로가기</h3>
+        <ul class="space-y-1">
+          <li><a href="/info" class="text-gray-600 hover:text-blue-600 transition">소개 및 이용규칙</a></li>
+          <li><a href="/history" class="text-gray-600 hover:text-blue-600 transition">통계 및 정보</a></li>
+          <li><a href="/release-notes" class="text-gray-600 hover:text-blue-600 transition">릴리즈 노트</a></li>
+          <li><a href="https://github.com/anion15" class="text-gray-600 hover:text-blue-600 transition">개발자의 깃허브</a></li>
+          <li><a href="http://hello0909.dothome.co.kr/hangang.html" class="text-gray-600 hover:text-blue-600 transition">개발자의 다른 사이트</a></li>
+        </ul>
+      </div>
+
+      <!-- SNS -->
+      <div>
+        <h3 class="text-xl font-semibold mb-2">Follow Us</h3>
+        <div class="flex space-x-4">
+          <a href="https://x.com/Sjinside_" class="text-gray-600 hover:text-blue-600 transition">X(트위터)</a>
+          <a href="https://www.youtube.com/@SjInside-j8q" class="text-gray-600 hover:text-blue-600 transition">유튜브</a>
+        </div>
+      </div>
+    </div>
+
+    <hr class="my-8 border-gray-200">
+
+    <p class="text-center text-gray-500 text-sm">&copy; 2025 상정인사이드. All rights reserved.</p>
+  </footer>
+</html>

@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <link rel='icon' type="images/png" href="https://raw.githubusercontent.com/Anion15/anion15.github.io/refs/heads/main/Preview.png">
+  <title>상정인사이드</title>
+  <meta name="description" content="상정인사이드 커뮤니티는 '정상의 반대'라는 개념을 바탕으로 자유롭고 창의적인 토론을 나누는 공간입니다.">
+  <meta name="keywords" content="커뮤니티, 상정인사이드, 자유로운">
+  <meta name="author" content="anion15">
+  <meta property="og:title" content="상정인사이드">
+  <meta property="og:description" content="정상의 반대말 상정. 자유로운 커뮤니티">
+  <meta property="og:image" content="https://raw.githubusercontent.com/Anion15/anion15.github.io/refs/heads/main/full-logo.png">
+  <meta property="og:url" content="https://anion15.github.io">
+  <meta name="twitter:title" content="상정인사이드">
+  <meta name="twitter:description" content="정상의 반대말 상정. 자유로운 커뮤니티">
+  <meta name="twitter:image" content="https://raw.githubusercontent.com/Anion15/anion15.github.io/refs/heads/main/full-logo.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Noto Sans KR', sans-serif; overflow-x: hidden; -ms-overflow-style: none; }
+    ::-webkit-scrollbar { display: none;}
+    @media (max-width: 511px) {body {width: 125%;}}
+    @media (max-width: 410px) {body {width: 150%;}}
+    @media (max-width: 342px) {body {width: 175%;}}
+    @media (max-width: 292px) {body {width: 200%;}}
+  </style>
+</head>
+
+<body class="flex flex-col min-h-screen bg-gray-100 dark">
+  <header class="bg-white shadow py-4 px-6 mb-6 flex items-center justify-between">
+    <!-- 왼쪽: 로고 -->
+    <div class="flex items-center space-x-4">
+      <a href="https://anion15.github.io">
+        <img src="https://raw.githubusercontent.com/Anion15/anion15.github.io/refs/heads/main/logo-.png" alt="logo" class="w-28 sm:w-32 md:w-36 lg:w-40 xl:w-44" />
+      </a>
+    </div>
+  
+    <!-- 오른쪽: 버튼 그룹 -->
+    <div class="flex space-x-2">
+      <a href="/info"
+         class="bg-gray-600 hover:bg-blue-600 text-white font-semibold
+                text-sm sm:text-base md:text-sm sm:text-xl
+                py-1 px-2 sm:py-2 sm:px-4 md:py-3 md:px-6 rounded">
+        상정인사이드란?
+      </a>
+      <a href="/history"
+         class="bg-gray-600 hover:bg-blue-600 text-white font-semibold
+                text-sm sm:text-base md:text-sm sm:text-xl
+                py-1 px-2 sm:py-2 sm:px-4 md:py-3 md:px-6 rounded">
+        상정인사이드 역사
+      </a>
+    </div>
+  </header>
+  <main class="flex-grow max-w-2xl mx-auto px-4">
+    <section class="mb-8">
+      <form id="post-form" class="bg-white p-6 rounded shadow space-y-4">
+        <h2 class="text-xl font-semibold">글 작성</h2>
+        <span class="text-xs text-gray-500">음란물, 차별·비하·혐오, 초상권·저작권 침해 게시물은 민형사상 책임이 따를 수 있습니다.</span>
+        <input id="title" placeholder="제목" class="w-full border rounded px-3 py-2" />
+        <textarea id="content" placeholder="내용" class="w-full border rounded px-3 py-2"></textarea>
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">작성하기</button>
+      </form>
+    </section>
+    <div id="stats-text" class="mb-4 text-sm text-gray-600">통계 로딩중</div> 
+    <div class="flex gap-2 mb-4">
+      <button id="latest-btn" class="px-4 py-2 rounded text-white bg-blue-600">최신 게시물</button>
+      <button id="popular-btn" class="px-4 py-2 rounded text-white bg-gray-600">인기 게시물</button>
+    </div>
+    <section id="post-list" class="space-y-6"></section>
+  </main>
+  <h1>&nbsp;</h1>
+  <h1>&nbsp;</h1>
+  <div id="end-text" class="mb-4 text-sm text-gray-600" style="text-align: center;"></div>
+  <h1>&nbsp;</h1>
+  <h1>&nbsp;</h1>
+
+  <!--새로운 footer-->
+  <footer class="bg-white text-gray-800 py-10 px-5 font-sans border-t border-gray-200">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+      <!-- 소개 -->
+      <div>
+        <h2 class="text-2xl font-bold mb-2">상정인사이드</h2>
+        <p class="text-gray-600">당신의 일상과 생각을 나누는 공간,<br>상정인사이드 커뮤니티입니다.</p>
+      </div>
+
+      <!-- 바로가기 -->
+      <div>
+        <h3 class="text-xl font-semibold mb-2">바로가기</h3>
+        <ul class="space-y-1">
+          <li><a href="/info" class="text-gray-600 hover:text-blue-600 transition">소개 및 이용규칙</a></li>
+          <li><a href="/history" class="text-gray-600 hover:text-blue-600 transition">통계 및 정보</a></li>
+          <li><a href="/release-notes" class="text-gray-600 hover:text-blue-600 transition">릴리즈 노트</a></li>
+          <li><a href="https://github.com/anion15" class="text-gray-600 hover:text-blue-600 transition">개발자의 깃허브</a></li>
+          <li><a href="http://anion15.github.io/hangang.html" class="text-gray-600 hover:text-blue-600 transition">개발자의 다른 사이트</a></li>
+        </ul>
+      </div>
+
+      <!-- SNS -->
+      <div>
+        <h3 class="text-xl font-semibold mb-2">Follow Us</h3>
+        <div class="flex space-x-4">
+          <a href="https://x.com/Sjinside_" class="text-gray-600 hover:text-blue-600 transition">X(트위터)</a>
+          <a href="https://www.youtube.com/@SjInside-j8q" class="text-gray-600 hover:text-blue-600 transition">유튜브</a>
+        </div>
+      </div>
+    </div>
+
+    <hr class="my-8 border-gray-200">
+
+    <p class="text-center text-gray-500 text-sm">&copy; 2025 상정인사이드. All rights reserved.</p>
+  </footer>
+
+  
+
+  <script>
+    let currentView = 'latest';
+    const pendingVotes = {};
+    let currentPosts = [];
+
+    document.getElementById('latest-btn').addEventListener('click', () => {
+      if (currentView !== 'latest') {
+        currentView = 'latest';
+        getPosts();
+      }
+      document.getElementById('latest-btn').classList.add('bg-blue-600');
+      document.getElementById('latest-btn').classList.remove('bg-gray-600');
+      document.getElementById('popular-btn').classList.add('bg-gray-600');
+      document.getElementById('popular-btn').classList.remove('bg-blue-600');
+    });
+
+    document.getElementById('popular-btn').addEventListener('click', () => {
+      if (currentView !== 'popular') {
+        currentView = 'popular';
+        getPopularPosts();
+      }
+      document.getElementById('popular-btn').classList.add('bg-blue-600');
+      document.getElementById('popular-btn').classList.remove('bg-gray-600');
+      document.getElementById('latest-btn').classList.add('bg-gray-600');
+      document.getElementById('latest-btn').classList.remove('bg-blue-600');
+    });
+
+    
+    async function getStats() {
+      try {
+        const [postRes, commentRes] = await Promise.all([
+          fetch('/post_count'),
+          fetch('/comment_count')
+        ]);
+
+        const postData = await postRes.json();
+        const commentData = await commentRes.json();
+
+        if (postData.success && commentData.success) {
+          const statsText = `총 ${postData.count}개의 게시물과 ${commentData.count}개의 댓글이 등록되었습니다.`;
+          document.getElementById('stats-text').textContent = statsText;
+
+          let endText = '';
+          
+          if (currentView === 'latest') {
+            endText = `${postData.count}개의 게시물중 100개의 최신 게시물을 표시하였습니다.`;
+          } else {
+           endText = `${postData.count}개의 게시물중 10개의 인기 게시물을 표시하였습니다.`;
+          }
+
+          document.getElementById('end-text').textContent = endText;
+        }
+      } catch (error) {
+        console.error('통계 불러오기 실패', error);
+      }
+    }
+
+
+
+    if (!localStorage.getItem('client_id')) {
+      localStorage.setItem('client_id', crypto.randomUUID());
+    }
+    const clientId = localStorage.getItem('client_id');
+
+    async function getPosts() {
+      const res = await fetch('/posts');
+      const data = await res.json();
+      if (data.success) {
+        renderPosts(data.posts);
+        getStats();
+      }
+    }
+
+    async function getPopularPosts() {
+      const res = await fetch('/popular_posts');
+      const data = await res.json();
+      if (data.success) {
+        renderPosts(data.posts);
+        getStats();
+      }
+    }
+    
+    function renderPosts(posts) {
+      currentPosts = posts.map(post => ({ ...post }));
+      const postList = document.getElementById('post-list');
+      postList.innerHTML = '';
+
+      posts.forEach(post => {
+        const postEl = document.createElement('div');
+        postEl.className = 'bg-white rounded shadow p-4';
+        postEl.setAttribute('data-post-id', post.id);
+
+        const titleEl = document.createElement('h3');
+        titleEl.className = 'text-lg font-bold text-gray-800';
+        titleEl.textContent = post.title;
+
+        const contentEl = document.createElement('p');
+        contentEl.className = 'text-gray-700 my-2 break-words w-full';
+        contentEl.textContent = post.content;
+
+        const infoEl = document.createElement('div');
+        infoEl.className = 'text-xs text-gray-500 mb-2';
+
+        // 작성 시간 계산
+        const postDate = new Date(post.date);
+        const timeDiff = Math.floor((new Date() - postDate) / 1000);
+        let timeAgo = '';
+        let timeAgoDetailed = '';
+
+        if (timeDiff < 60) {
+          timeAgo = `${timeDiff}초 전`;
+          timeAgoDetailed = `${timeDiff}초 전`;
+        } else if (timeDiff < 3600) {
+          timeAgo = `${Math.floor(timeDiff / 60)}분 전`;
+          timeAgoDetailed = `${Math.floor(timeDiff / 60)}분 ${timeDiff % 60}초 전`;
+        } else if (timeDiff < 86400) {
+          timeAgo = `${Math.floor(timeDiff / 3600)}시간 전`;
+          timeAgoDetailed = `${Math.floor(timeDiff / 3600)}시간 ${Math.floor((timeDiff % 3600) / 60)}분 전`;
+        } else if (timeDiff < 2592000) {
+          timeAgo = `${Math.floor(timeDiff / 86400)}일 전`;
+          timeAgoDetailed = `${Math.floor(timeDiff / 86400)}일 ${Math.floor((timeDiff % 86400) / 3600)}시간 전`;
+        } else if (timeDiff < 31536000) {
+          timeAgo = `${Math.floor(timeDiff / 2592000)}개월 전`;
+          timeAgoDetailed = `${Math.floor(timeDiff / 2592000)}개월 ${Math.floor((timeDiff % 2592000) / 86400)}일 전`;
+        } else {
+          timeAgo = `${Math.floor(timeDiff / 31536000)}년 전`;
+          timeAgoDetailed = `${Math.floor(timeDiff / 31536000)}년 ${Math.floor((timeDiff % 31536000) / 2592000)}개월 전`;
+        }
+
+        infoEl.textContent = `작성자: ${post.client_id.slice(0, 8)} · ${timeAgoDetailed}`;
+
+
+        const btnGroup = document.createElement('div');
+        btnGroup.className = 'flex gap-2 mb-2';
+
+        const likeBtn = document.createElement('button');
+        likeBtn.className = 'bg-green-500 text-white px-2 py-1 rounded';
+        likeBtn.textContent = `추천 (${post.likes})`;
+        likeBtn.onclick = () => handleVote(post.id, 'like');
+
+        const dislikeBtn = document.createElement('button');
+        dislikeBtn.className = 'bg-red-500 text-white px-2 py-1 rounded';
+        dislikeBtn.textContent = `비추천 (${post.dislikes})`;
+        dislikeBtn.onclick = () => handleVote(post.id, 'dislike');
+
+        btnGroup.appendChild(likeBtn);
+        btnGroup.appendChild(dislikeBtn);
+
+        if (post.is_owner) {
+          const deleteBtn = document.createElement('button');
+          deleteBtn.className = 'text-red-600 hover:underline';
+          deleteBtn.textContent = '삭제';
+          deleteBtn.onclick = () => deletePost(post.id);
+          btnGroup.appendChild(deleteBtn);
+        }
+
+        const commentWrapper = document.createElement('div');
+        commentWrapper.className = 'border-t pt-2 space-y-1';
+
+        const commentTitle = document.createElement('div');
+        commentTitle.className = 'text-sm font-semibold';
+        commentTitle.textContent = '댓글';
+
+        commentWrapper.appendChild(commentTitle);
+
+        post.comments.forEach(c => {
+          const commentEl = document.createElement('div');
+          commentEl.className = 'flex gap-2 w-full';
+
+          const nicknameEl = document.createElement('div');
+          nicknameEl.className = 'shrink-0 text-gray-500 w-15 text-right';
+          nicknameEl.textContent = `(${c.client_id.slice(0, 8)})`;
+
+          const textEl = document.createElement('div');
+          textEl.className = 'text-sm text-gray-800 break-words w-full min-w-0';
+          textEl.textContent = `${c.text} · ${c.date}`;
+
+          commentEl.appendChild(nicknameEl);
+          commentEl.appendChild(textEl);
+          commentWrapper.appendChild(commentEl);
+        });
+
+        const commentForm = document.createElement('form');
+        commentForm.className = 'flex gap-2 mt-2';
+        commentForm.onsubmit = e => submitComment(e, post.id);
+
+        const commentInput = document.createElement('input');
+        commentInput.type = 'text';
+        commentInput.placeholder = '댓글 작성';
+        commentInput.className = 'flex-grow border px-2 py-1 rounded';
+
+        const commentSubmit = document.createElement('button');
+        commentSubmit.type = 'submit';
+        commentSubmit.className = 'bg-blue-500 text-white px-3 py-1 rounded';
+        commentSubmit.textContent = '작성';
+
+        commentForm.appendChild(commentInput);
+        commentForm.appendChild(commentSubmit);
+        commentWrapper.appendChild(commentForm);
+
+        postEl.appendChild(titleEl);
+        postEl.appendChild(contentEl);
+        postEl.appendChild(infoEl);
+        postEl.appendChild(btnGroup);
+        postEl.appendChild(commentWrapper);
+        postList.appendChild(postEl);
+      });
+    }
+
+    function handleVote(postId, type) {
+      if (!pendingVotes[postId]) {
+        pendingVotes[postId] = { like: 0, dislike: 0, timer: null };
+      }
+      pendingVotes[postId][type] += 1;
+      updatePostVoteUI(postId);
+
+      if (pendingVotes[postId].timer) clearTimeout(pendingVotes[postId].timer);
+      pendingVotes[postId].timer = setTimeout(() => {
+        sendPendingVotes(postId);
+      }, 1500);
+    }
+
+    function updatePostVoteUI(postId) {
+      const post = currentPosts.find(p => p.id === postId);
+      if (!post) return;
+      const pending = pendingVotes[postId] || { like: 0, dislike: 0 };
+      
+      const postDiv = document.querySelector(`#post-list > div[data-post-id="${postId}"]`);
+      if (postDiv) {
+        const likeBtn = postDiv.querySelector('button.bg-green-500');
+        const dislikeBtn = postDiv.querySelector('button.bg-red-500');
+        if (likeBtn) likeBtn.textContent = `추천 (${post.likes + pending.like})`;
+        if (dislikeBtn) dislikeBtn.textContent = `비추천 (${post.dislikes + pending.dislike})`;
+      }
+    }
+
+    async function sendPendingVotes(postId) {
+      const pending = pendingVotes[postId];
+      if (!pending || (pending.like === 0 && pending.dislike === 0)) return;
+
+      try {
+        const res = await fetch(`/post/${postId}/vote`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            like: pending.like, 
+            dislike: pending.dislike, 
+            client_id: clientId 
+          })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          pendingVotes[postId] = { like: 0, dislike: 0, timer: null };
+          
+          const post = currentPosts.find(p => p.id === postId);
+          if (post) {
+            post.likes = data.likes;
+            post.dislikes = data.dislikes;
+          }
+          
+          updatePostVoteUI(postId);
+        } else {
+          const post = currentPosts.find(p => p.id === postId);
+          if (post) {
+            post.likes = data.current_likes;
+            post.dislikes = data.current_dislikes;
+          }
+          updatePostVoteUI(postId);
+
+          alert(data.message || '투표 실패');
+        }
+      } catch (e) {
+        alert('서버 통신 오류');
+      }
+    }
+
+
+
+
+    document.getElementById('post-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const title = document.getElementById('title').value.trim();
+      const content = document.getElementById('content').value.trim();
+      if (!title || !content) return alert('제목과 내용을 입력해주세요');
+      const res = await fetch('/post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, content, client_id: clientId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (currentView === 'latest') {
+          getPosts();
+        } else {
+          getPopularPosts();
+        }
+        e.target.reset();
+      } else alert(data.message || '작성 실패');
+    });
+
+    async function submitComment(e, postId) {
+      e.preventDefault();
+      const input = e.target.querySelector('input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const res = await fetch(`/post/${postId}/comment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, client_id: clientId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        input.value = '';
+        if (currentView === 'latest') {
+          getPosts();
+        } else {
+          getPopularPosts();
+        }
+      } else {
+        alert(data.message || '댓글 작성 실패');
+      }
+    }
+
+
+    async function deletePost(id) {
+      const res = await fetch(`/post/${id}/delete`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success){
+        if (currentView == 'latest') {
+          getPosts();
+        } else {
+          getPopularPosts();
+        }
+      } else alert(data.message || '삭제 실패');
+    }
+
+    document.getElementById('latest-btn').addEventListener('click', () => {
+      if (currentView !== 'latest') {
+        currentView = 'latest';
+        getPosts();
+        document.getElementById('latest-btn').classList.add('bg-blue-600');
+        document.getElementById('popular-btn').classList.remove('bg-gray-600');
+      }
+    });
+
+    document.getElementById('popular-btn').addEventListener('click', () => {
+      if (currentView !== 'popular') {
+        currentView = 'popular';
+        getPopularPosts();
+        document.getElementById('popular-btn').classList.add('bg-gray-600');
+        document.getElementById('latest-btn').classList.remove('bg-blue-600');
+      }
+    });
+
+
+    getPosts(); 
+    let isTyping = false;
+
+
+    document.addEventListener('focusin', e => {
+      if (e.target.matches('form input[type="text"], form textarea')) {
+        isTyping = true;
+      }
+    });
+
+
+    document.addEventListener('focusout', e => {
+      if (e.target.matches('form input[type="text"], form textarea')) {
+        isTyping = false;
+      }
+    });
+
+
+    async function conditionalRefresh() {
+      if (!isTyping) {
+        try {
+          if (currentView === 'latest') {
+            await getPosts();
+          } else {
+            await getPopularPosts();
+          }
+        } catch (error) {
+          console.error('자동 새로고침 중 오류 발생', error);
+        }
+      }
+      setTimeout(conditionalRefresh, 5000);
+    }
+
+    conditionalRefresh();
+
+  </script>
+</body>
+</html>
