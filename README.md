@@ -69,3 +69,5 @@ Tailwind CSS, Flask, Sqlite 기반으로 구축되었습니다.
 &nbsp;
 &nbsp;
 
+![diagram](https://github.com/user-attachments/assets/bcbd2fbb-b551-4f46-801a-4f7699a9115e)
+
