@@ -1,17 +1,77 @@
 # -*- coding: utf-8 -*-
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session, g
-from flask_sqlalchemy import SQLAlchemy
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-from flask_cors import CORS
-from flask_login import LoginManager, UserMixin, login_user, login_required, current_user, logout_user
-from datetime import datetime, timedelta, timezone
-import os
-import uuid
-from werkzeug.security import generate_password_hash, check_password_hash
-import re
-from dotenv import load_dotenv
-import threading
+try:
+    from flask import Flask, render_template, request, jsonify, redirect, url_for, session, g
+except ModuleNotFoundError:
+    print("모듈을 찾을 수 없습니다. 'flask'가 설치되어 있는지 확인하세요.")
+    while True:
+        pass
+try:
+    from flask_sqlalchemy import SQLAlchemy
+except ModuleNotFoundError:
+    print("모듈을 찾을 수 없습니다. 'flask_sqlalchemy'가 설치되어 있는지 확인하세요.")
+    while True:
+        pass
+try:
+    from flask_limiter import Limiter
+    from flask_limiter.util import get_remote_address
+except ModuleNotFoundError:
+    print("모듈을 찾을 수 없습니다. 'flask_limiter'가 설치되어 있는지 확인하세요.")
+    while True:
+        pass
+try:
+    from flask_cors import CORS
+except ModuleNotFoundError:
+    print("모듈을 찾을 수 없습니다. 'flask_cors'가 설치되어 있는지 확인하세요.")
+    while True:
+        pass
+try:
+    from flask_login import LoginManager, UserMixin, login_user, login_required, current_user, logout_user
+except ModuleNotFoundError:
+    print("모듈을 찾을 수 없습니다. 'flask_login'가 설치되어 있는지 확인하세요.")
+    while True:
+        pass
+try:
+    from datetime import datetime, timedelta, timezone
+except ModuleNotFoundError:
+    print("모듈을 찾을 수 없습니다. 'datetime'가 설치되어 있는지 확인하세요.")
+    while True:
+        pass
+try:
+    import os
+except ModuleNotFoundError:
+    print("모듈을 찾을 수 없습니다. 'os'가 설치되어 있는지 확인하세요.")
+    while True:
+        pass
+try:
+    import uuid
+except ModuleNotFoundError:
+    print("모듈을 찾을 수 없습니다. 'uuid'가 설치되어 있는지 확인하세요.")
+    while True:
+        pass
+try:
+    from werkzeug.security import generate_password_hash, check_password_hash
+except ModuleNotFoundError:
+    print("모듈을 찾을 수 없습니다. 'werkzeug.security'가 설치되어 있는지 확인하세요.")
+    while True:
+        pass
+try:
+    import re
+except ModuleNotFoundError:
+    print("모듈을 찾을 수 없습니다. 're'가 설치되어 있는지 확인하세요.")
+    while True:
+        pass
+try:
+    from dotenv import load_dotenv
+except ModuleNotFoundError:
+    print("모듈을 찾을 수 없습니다. 'dotenv'가 설치되어 있는지 확인하세요.")
+    while True:
+        pass
+try:
+    import threading
+except ModuleNotFoundError:
+    print("모듈을 찾을 수 없습니다. 'threading'가 설치되어 있는지 확인하세요.")
+    while True:
+        pass
 
 load_dotenv()
 
