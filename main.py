@@ -348,6 +348,10 @@ def release_notes():
     session_client_id = get_session_client_id()
     return render_template('release-notes.html', client_id=session_client_id)
 
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
 
 
 @app.route('/register', methods=['POST'])
