@@ -331,6 +331,12 @@ def index():
     session_client_id = get_session_client_id()
     return render_template('index.html', client_id=session_client_id)
 
+@app.route('/new')
+@check_abuse
+def newindex():
+    session_client_id = get_session_client_id()
+    return render_template('indexV2.html', client_id=session_client_id)
+
 @app.route('/info')
 def info():
     session_client_id = get_session_client_id()
