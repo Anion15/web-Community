@@ -31,33 +31,9 @@ except ModuleNotFoundError:
     while True:
         pass
 try:
-    from datetime import datetime, timedelta, timezone
-except ModuleNotFoundError:
-    print("모듈을 찾을 수 없습니다. 'datetime'가 설치되어 있는지 확인하세요.")
-    while True:
-        pass
-try:
-    import os
-except ModuleNotFoundError:
-    print("모듈을 찾을 수 없습니다. 'os'가 설치되어 있는지 확인하세요.")
-    while True:
-        pass
-try:
-    import uuid
-except ModuleNotFoundError:
-    print("모듈을 찾을 수 없습니다. 'uuid'가 설치되어 있는지 확인하세요.")
-    while True:
-        pass
-try:
     from werkzeug.security import generate_password_hash, check_password_hash
 except ModuleNotFoundError:
     print("모듈을 찾을 수 없습니다. 'werkzeug.security'가 설치되어 있는지 확인하세요.")
-    while True:
-        pass
-try:
-    import re
-except ModuleNotFoundError:
-    print("모듈을 찾을 수 없습니다. 're'가 설치되어 있는지 확인하세요.")
     while True:
         pass
 try:
@@ -66,12 +42,12 @@ except ModuleNotFoundError:
     print("모듈을 찾을 수 없습니다. 'dotenv'가 설치되어 있는지 확인하세요.")
     while True:
         pass
-try:
-    import threading
-except ModuleNotFoundError:
-    print("모듈을 찾을 수 없습니다. 'threading'가 설치되어 있는지 확인하세요.")
-    while True:
-        pass
+
+from datetime import datetime, timedelta, timezone
+import os
+import uuid
+import re
+import threading
 
 load_dotenv()
 
