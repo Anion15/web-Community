@@ -1,0 +1,35 @@
+.title-text {
+  color: white;
+  font-size: 2rem;
+  font-weight: bold;
+  text-shadow: 1px 1px 5px #000;
+}
+
+#popMenu {
+  position: absolute;
+  display: none;
+  width: 280px;
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  z-index: 999;
+}
+
+@keyframes fadeInSlide {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.list-group-item {
+  color: white;
+  background: transparent;
+  transition: all 0.3s ease;
+}
+.list-group-item:hover {
+  background: rgba(255, 255, 255, 0.20);
+  backdrop-filter: blur(12px);
+  font-weight: bold;
+  transform: scale(1.02);
+}
