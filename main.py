@@ -142,6 +142,26 @@ user_comment_times = {}  # client_id: [timestamp, timestamp, timestamp ...]
 ip_post_times = {}  # IP 주소: [timestamp, timestamp, timestamp ...]
 ip_comment_times = {}  # IP 주소: [timestamp, timestamp, timestamp ...]
 
+def get_real_ip():
+    """
+    X-Forwarded-For 헤더를 우선적으로 사용하여 실제 클라이언트 IP를 획득
+    프록시/로드밸런서 환경에서 실제 클라이언트 IP를 정확히 가져오기 위함
+    """
+    # X-Forwarded-For 헤더 확인 (프록시/로드밸런서 환경)
+    xff = request.headers.get('X-Forwarded-For')
+    if xff:
+        # X-Forwarded-For는 "client, proxy1, proxy2" 형태이므로 첫 번째 IP가 실제 클라이언트 IP
+        real_ip = xff.split(',')[0].strip()
+        return real_ip
+
+    # CF-Connecting-IP 헤더 확인 (Cloudflare 사용시)
+    cf_ip = request.headers.get('CF-Connecting-IP')
+    if cf_ip:
+        return cf_ip.strip()
+
+    # 위 헤더들이 없으면 기본 remote_addr 사용
+    return request.remote_addr
+
 
 def is_content_spam(title, content):
     # 내용의 반복성 검사
@@ -159,7 +179,7 @@ def is_content_spam(title, content):
 
 # IP 기반 레이트 리미팅 강화
 def is_spam_by_ip():
-    ip_address = request.remote_addr
+    ip_address = get_real_ip()
     now = datetime.now(timezone.utc)
     # 시간 윈도우를 15초에서 2분으로 늘림
     times = ip_post_times.get(ip_address, [])
@@ -170,7 +190,7 @@ def is_spam_by_ip():
     return len(times) >= 5
 
 def is_comment_spam_by_ip():
-    ip_address = request.remote_addr
+    ip_address = get_real_ip()
     now = datetime.now(timezone.utc)
     times = ip_comment_times.get(ip_address, [])
     times = [t for t in times if (now - t) < timedelta(seconds=10)]
@@ -179,7 +199,7 @@ def is_comment_spam_by_ip():
     return len(times) >= 5
 
 def check_session_ip_consistency():
-    current_ip = request.remote_addr
+    current_ip = get_real_ip()
     if 'ip_history' in session and session['ip_history']:
         latest_ip, _ = session['ip_history'][-1]
         return current_ip == latest_ip
@@ -212,7 +232,7 @@ def generate_client_id():
     return str(uuid.uuid4())
 
 def get_session_client_id():
-    current_ip = request.remote_addr
+    current_ip = get_real_ip()
     if 'client_id' not in session:
         session['client_id'] = generate_client_id()
         session['ip_history'] = [(current_ip, datetime.now(timezone.utc))] # IP 기록 초기화
@@ -231,7 +251,7 @@ def check_ip_change_frequency():
         return True  # 세션이 없으면 검사 안함
 
     ip_history = session.get('ip_history', [])
-    current_ip = request.remote_addr
+    current_ip = get_real_ip()
     now_utc = datetime.now(timezone.utc)
 
     # 오래된 기록 삭제
