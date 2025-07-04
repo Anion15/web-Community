@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime, timedelta
+import os
+import ipaddress
+
 try:
-    from flask import Flask, render_template, request, jsonify, redirect, url_for, session, g
+    from flask import Flask, render_template, request, jsonify, redirect, url_for, session, g, make_response, Response, render_template_string
 except ModuleNotFoundError:
     print("모듈을 찾을 수 없습니다. 'flask'가 설치되어 있는지 확인하세요.")
     while True:
@@ -74,6 +78,30 @@ except ModuleNotFoundError:
         pass
 
 load_dotenv()
+import requests
+import logging
+from logging.handlers import RotatingFileHandler
+
+
+def setup_logging(app):
+    # 기본 로거 설정
+    logging.basicConfig(level=logging.INFO)
+
+    # 인코딩 명시 (Python 3.9 이상에서 사용 가능)
+    file_handler = RotatingFileHandler('flask.log', maxBytes=10*1024*1024, backupCount=5, encoding='utf-8')
+    file_handler.setLevel(logging.INFO)
+
+    # 로그 포맷 설정
+    formatter = logging.Formatter('time: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+    file_handler.setFormatter(formatter)
+
+    # Flask 앱 로거에 핸들러 추가
+    app.logger.addHandler(file_handler)
+    app.logger.setLevel(logging.INFO)
+
+
+
+
 
 # 필수 환경변수 체크
 SECRET_KEY = os.getenv('SECRET_KEY')
@@ -82,6 +110,10 @@ if not SECRET_KEY:
 
 app = Flask(__name__)
 CORS(app)
+
+# load_dotenv() 다음에 추가
+setup_logging(app)
+
 app.secret_key = SECRET_KEY
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///./posts.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -107,6 +139,20 @@ IP_CHANGE_TRACKING_WINDOW = timedelta(minutes=5) # IP 변경 추적 기간
 # 현재 한국 시간을 얻는 함수 (offset-aware)
 def get_korean_time():
     return datetime.now(timezone(timedelta(hours=9)))
+
+def log_activity(action, status_code="", additional_info=""):
+    """통합 활동 로그"""
+    client_ip = get_real_ip()
+    client_uuid = session.get('client_id', 'unknown')
+    timestamp = get_korean_time().strftime('%Y-%m-%d %H:%M:%S')
+    
+    log_message = f"{timestamp} ip: {client_ip}, uuid: {client_uuid} -- {action}"
+    if status_code:
+        log_message += f" {status_code}"
+    if additional_info:
+        log_message += f" {additional_info}"
+    
+    app.logger.info(log_message)
 
 # Models
 class User(db.Model, UserMixin):
@@ -142,6 +188,8 @@ user_comment_times = {}  # client_id: [timestamp, timestamp, timestamp ...]
 ip_post_times = {}  # IP 주소: [timestamp, timestamp, timestamp ...]
 ip_comment_times = {}  # IP 주소: [timestamp, timestamp, timestamp ...]
 
+
+
 def get_real_ip():
     """
     X-Forwarded-For 헤더를 우선적으로 사용하여 실제 클라이언트 IP를 획득
@@ -163,16 +211,65 @@ def get_real_ip():
     return request.remote_addr
 
 
+# 전역 변수로 VPN/차단된 IP 목록 관리
+vpn_list = []
+passed_list = []  # 통과한 IP 목록도 추가
+
+def is_valid_ipv4(ip):
+    try:
+        ip_obj = ipaddress.ip_address(ip)
+        return ip_obj.version == 4
+    except ValueError:
+        return False
+
+def is_vpn(ip):
+    # IPv4가 아닌 경우 차단
+    if not is_valid_ipv4(ip):
+        return True
+
+    # 이미 VPN으로 확인된 IP인지 체크
+    if ip in vpn_list:
+        return True
+    
+    # 이미 통과한 IP인지 체크
+    if ip in passed_list:
+        return False
+    
+    # 새로운 IP - API로 검사
+    try:
+        url = f"http://ip-api.com/json/{ip}?fields=status,message,query,proxy,hosting,mobile"
+        response = requests.get(url, timeout=3)
+        data = response.json()
+        
+        if data['status'] == 'success':
+            is_vpn_result = data.get('proxy', False) or data.get('hosting', False)
+            
+            if is_vpn_result:
+                # VPN/프록시/호스팅 IP
+                vpn_list.append(ip)
+                return True
+            else:
+                # 일반 IP
+                passed_list.append(ip)
+                return False
+        else:
+            return False
+            
+    except requests.exceptions.RequestException as e:
+        return False
+
+
+
 def is_content_spam(title, content):
     # 내용의 반복성 검사
-    recent_posts = Post.query.filter_by(client_id=get_session_client_id()).order_by(Post.date.desc()).limit(5).all()
+    recent_posts = Post.query.filter_by(client_id=get_session_client_id()).order_by(Post.date.desc()).limit(3).all()
     
     for post in recent_posts:
         # 유사도 계산 (간단한 예)
         title_similarity = len(set(title.split()) & set(post.title.split())) / max(len(set(title.split())), 1)
         content_similarity = len(set(content.split()) & set(post.content.split())) / max(len(set(content.split())), 1)
         
-        if title_similarity > 0.7 or content_similarity > 0.7:
+        if title_similarity >= 0.9 or content_similarity >= 0.9:
             return True
     
     return False
@@ -183,7 +280,7 @@ def is_spam_by_ip():
     now = datetime.now(timezone.utc)
     # 시간 윈도우를 15초에서 2분으로 늘림
     times = ip_post_times.get(ip_address, [])
-    times = [t for t in times if (now - t) < timedelta(minutes=2)]
+    times = [t for t in times if (now - t) < timedelta(seconds=100)]
     times.append(now)
     ip_post_times[ip_address] = times
     # 임계값을 3에서 5로 늘림
@@ -193,10 +290,10 @@ def is_comment_spam_by_ip():
     ip_address = get_real_ip()
     now = datetime.now(timezone.utc)
     times = ip_comment_times.get(ip_address, [])
-    times = [t for t in times if (now - t) < timedelta(seconds=10)]
+    times = [t for t in times if (now - t) < timedelta(seconds=60)]
     times.append(now)
     ip_comment_times[ip_address] = times
-    return len(times) >= 5
+    return len(times) >= 10
 
 def check_session_ip_consistency():
     current_ip = get_real_ip()
@@ -206,25 +303,31 @@ def check_session_ip_consistency():
     return True # 세션에 IP 기록이 없으면 일치하는 것으로 간주
 
 def is_valid_client():
+    from flask import request
+
     # 허용된 Origin과 Referer 접두사
-    #allowed_origin_prefix = 'https://workout-tasks-facing-kate.trycloudflare.com/'
-    #allowed_referer_prefix = 'https://workout-tasks-facing-kate.trycloudflare.com/'
+    allowed_origin_prefix = ''
+    allowed_referer_prefix = ''
 
     # 요청 헤더에서 정보 추출
     origin = request.headers.get('Origin')
     referer = request.headers.get('Referer')
-    user_agent = request.headers.get('User-Agent')
+    user_agent = request.headers.get('User-Agent', '')
 
-    # Origin, Referer가 허용된 접두사로 시작하는지 확인
-    # if origin and not origin.startswith(allowed_origin_prefix):
-    #     return False, 'Invalid Origin'
 
-    #if referer and not referer.startswith(allowed_referer_prefix):
-    #    return False, 'Invalid Referer'
+    # 브라우저 허용 검사
+    if not user_agent:
+       return False, 'Missing User-Agent'
 
-    # User-Agent 검증 (예시로 특정 User-Agent만 허용)
-    # if not user_agent or 'Mozilla' not in user_agent:
-    #     return False, 'Invalid User-Agent'
+    user_agent_lower = user_agent.lower()
+
+    # Safari는 크롬과 동일하게 WebKit을 사용하므로 구별 주의
+    is_chrome = 'chrome' in user_agent_lower and 'edg' not in user_agent_lower and 'opr' not in user_agent_lower
+    is_edge = 'edg' in user_agent_lower
+    is_safari = 'safari' in user_agent_lower and 'chrome' not in user_agent_lower and 'chromium' not in user_agent_lower
+
+    if not (is_chrome or is_edge or is_safari):
+        return 10, '허용되지 않는 브라우저입니다.\n크롬, 엣지, 사파리로 접속해 주세요.'
 
     return True, 'Valid Client'
 
@@ -236,6 +339,7 @@ def get_session_client_id():
     if 'client_id' not in session:
         session['client_id'] = generate_client_id()
         session['ip_history'] = [(current_ip, datetime.now(timezone.utc))] # IP 기록 초기화
+        log_activity("클라이언트 uuid 생성")
     elif 'ip_history' in session:
         session['ip_history'].append((current_ip, datetime.now(timezone.utc))) # 현재 IP 기록
     else:
@@ -306,6 +410,25 @@ def contains_invalid_unicode(text):
     
     return re.search(pattern, text) is not None
 
+
+CF_TURNSTILE_SECRET = "Your-SecretKey"
+
+def verify_turnstile_token(token, remote_ip=None):
+    url = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+    data = {
+        'secret': CF_TURNSTILE_SECRET,
+        'response': token,
+    }
+    if remote_ip:
+        data['remoteip'] = remote_ip
+    resp = requests.post(url, data=data)
+    if resp.status_code != 200:
+        return False
+    result = resp.json()
+    return result.get("success", False)
+
+
+
 @app.before_request
 def before_request_func():
     g.request_size = len(request.get_data())
@@ -323,7 +446,7 @@ def after_request_func(response):
         total_bytes_transferred += total
 
     # 로그 출력이나 실시간 전송용
-    print(f"총 전송량: {total_bytes_transferred} bytes")
+    # print(f"총 전송량: {total_bytes_transferred} bytes")
     return response
 
 
@@ -337,8 +460,10 @@ def load_user(user_id):
 def check_abuse(func):
     def wrapper(*args, **kwargs):
         if not check_ip_change_frequency():
+            log_activity("IP 변경횟수 초과 감지", "403")
             return jsonify({'success': False, 'message': '잦은 IP 변경으로 인해 요청이 차단되었습니다.'}), 403
         if not check_session_ip_consistency():
+            log_activity("세션 IP 불일치 감지", "403")
             return jsonify({'success': False, 'message': '세션 IP가 일치하지 않습니다. 보안 위험으로 인해 요청이 차단되었습니다.'}), 403
         return func(*args, **kwargs)
     wrapper.__name__ = func.__name__
@@ -348,35 +473,388 @@ def check_abuse(func):
 @app.route('/')
 @check_abuse
 def index():
-    session_client_id = get_session_client_id()
-    return render_template('index.html', client_id=session_client_id)
+    ip = get_real_ip()
+    vpn_used = is_vpn(ip)
+    if vpn_used:
+        log_activity("VPN 사용 감지", "403")
+        return render_template_string("""
+            <!DOCTYPE html>
+            <html lang="ko">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>VPN 감지됨</title>
+            </head>
+            <body>
+                <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background-color: #f8f9fa; color: #333; font-family: Arial, sans-serif;">
+                    <h1 style="font-size: 72px; margin-bottom: 0; text-align: center;">VPN 감지됨</h1>
+                    <p style="font-size: 18px; margin-top: 10px;">VPN 또는 프록시가 활성화되어 있습니다.</p>
+                    <p style="font-size: 18px;">사이트 이용을 위해 VPN을 해제해 주세요.</p>
+                </div>
+            </body>
+            </html>
+        """)
+    else:
+        valid, message = is_valid_client()
+        if valid == 10:
+            return render_template_string("""
+                <!DOCTYPE html>
+                <html lang="ko">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>허용되지 않는 브라우저입니다.</title>
+                </head>
+                <body>
+                    <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background-color: #f8f9fa; color: #333; font-family: Arial, sans-serif;">
+                        <h1 style="font-size: 72px; margin-bottom: 0; text-align: center;">허용되지 않는 브라우저입니다.</h1>
+                        <p style="font-size: 18px; margin-top: 10px;">크롬, 엣지, 사파리로 접속해 주세요.</p>
+                    </div>
+                </body>
+                </html>
+            """, message=message), 400
+        elif not valid:
+            # 기타 잘못된 요청 (Referer, User-Agent 누락 등)
+            return message, 400
+        
+        session_client_id = get_session_client_id()
+        log_activity("메인루트 접속", "200")
+        html = render_template('index-on.html', client_id=session_client_id)
+
+        response = make_response(html)
+        response.headers['Cache-Control'] = 'public, max-age=30'  # 30초 캐시
+        return response
+
 
 @app.route('/new')
 @check_abuse
 def newindex():
-    session_client_id = get_session_client_id()
-    return render_template('indexV2.html', client_id=session_client_id)
+    ip = get_real_ip()
+    vpn_used = is_vpn(ip)
+    if vpn_used:
+        log_activity("VPN 사용 감지", "403")
+        return render_template_string("""
+            <!DOCTYPE html>
+            <html lang="ko">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>VPN 감지됨</title>
+            </head>
+            <body>
+                <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background-color: #f8f9fa; color: #333; font-family: Arial, sans-serif;">
+                    <h1 style="font-size: 72px; margin-bottom: 0; text-align: center;">VPN 감지됨</h1>
+                    <p style="font-size: 18px; margin-top: 10px;">VPN 또는 프록시가 활성화되어 있습니다.</p>
+                    <p style="font-size: 18px;">사이트 이용을 위해 VPN을 해제해 주세요.</p>
+                </div>
+            </body>
+            </html>
+        """)
+    else:
+        valid, message = is_valid_client()
+        if valid == 10:
+            return render_template_string("""
+                <!DOCTYPE html>
+                <html lang="ko">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>허용되지 않는 브라우저입니다.</title>
+                </head>
+                <body>
+                    <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background-color: #f8f9fa; color: #333; font-family: Arial, sans-serif;">
+                        <h1 style="font-size: 72px; margin-bottom: 0; text-align: center;">허용되지 않는 브라우저입니다.</h1>
+                        <p style="font-size: 18px; margin-top: 10px;">크롬, 엣지, 사파리로 접속해 주세요.</p>
+                    </div>
+                </body>
+                </html>
+            """, message=message), 400
+        elif not valid:
+            # 기타 잘못된 요청 (Referer, User-Agent 누락 등)
+            return message, 400
+        session_client_id = get_session_client_id()
+        log_activity("사용자 /new 접속", "200")
+        return render_template('index.html', client_id=session_client_id)
 
 @app.route('/info')
 def info():
+    valid, message = is_valid_client()
+    if valid == 10:
+        return render_template_string("""
+            <!DOCTYPE html>
+            <html lang="ko">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>허용되지 않는 브라우저입니다.</title>
+            </head>
+            <body>
+                <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background-color: #f8f9fa; color: #333; font-family: Arial, sans-serif;">
+                    <h1 style="font-size: 72px; margin-bottom: 0; text-align: center;">허용되지 않는 브라우저입니다.</h1>
+                    <p style="font-size: 18px; margin-top: 10px;">크롬, 엣지, 사파리로 접속해 주세요.</p>
+                </div>
+            </body>
+            </html>
+        """, message=message), 400
+    elif not valid:
+        # 기타 잘못된 요청 (Referer, User-Agent 누락 등)
+        return message, 400
     session_client_id = get_session_client_id()
+    log_activity("사용자 /info 접속", "200")
     return render_template('info.html', client_id=session_client_id)
 
 @app.route('/history')
 @check_abuse
 def history():
+    valid, message = is_valid_client()
+    if valid == 10:
+        return render_template_string("""
+            <!DOCTYPE html>
+            <html lang="ko">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>허용되지 않는 브라우저입니다.</title>
+            </head>
+            <body>
+                <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background-color: #f8f9fa; color: #333; font-family: Arial, sans-serif;">
+                    <h1 style="font-size: 72px; margin-bottom: 0; text-align: center;">허용되지 않는 브라우저입니다.</h1>
+                    <p style="font-size: 18px; margin-top: 10px;">크롬, 엣지, 사파리로 접속해 주세요.</p>
+                </div>
+            </body>
+            </html>
+        """, message=message), 400
+    elif not valid:
+        # 기타 잘못된 요청 (Referer, User-Agent 누락 등)
+        return message, 400
     session_client_id = get_session_client_id()
+    log_activity("사용자 /history 접속", "200")
     return render_template('history.html', client_id=session_client_id)
 
 @app.route('/release-notes')
 @check_abuse
 def release_notes():
+    valid, message = is_valid_client()
+    if valid == 10:
+        return render_template_string("""
+            <!DOCTYPE html>
+            <html lang="ko">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>허용되지 않는 브라우저입니다.</title>
+            </head>
+            <body>
+                <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background-color: #f8f9fa; color: #333; font-family: Arial, sans-serif;">
+                    <h1 style="font-size: 72px; margin-bottom: 0; text-align: center;">허용되지 않는 브라우저입니다.</h1>
+                    <p style="font-size: 18px; margin-top: 10px;">크롬, 엣지, 사파리로 접속해 주세요.</p>
+                </div>
+            </body>
+            </html>
+        """, message=message), 400
+    elif not valid:
+        # 기타 잘못된 요청 (Referer, User-Agent 누락 등)
+        return message, 400
     session_client_id = get_session_client_id()
     return render_template('release-notes.html', client_id=session_client_id)
 
+@app.route('/sitemap.xml')
+@check_abuse
+def sitemap():
+    urls = [
+        {
+            'loc': '/',
+            'lastmod': '',
+            'changefreq': 'daily',
+            'priority': '1.0'
+        },
+        {
+            'loc': '/info',
+            'lastmod': '',
+            'changefreq': 'weekly',
+            'priority': '0.8'
+        },
+        {
+            'loc': '/history',
+            'lastmod': '',
+            'changefreq': 'monthly',
+            'priority': '0.7'
+        },
+        {
+            'loc': '/release-notes',
+            'lastmod': '',
+            'changefreq': 'monthly',
+            'priority': '0.7'
+        },
+    ]
+
+    xml_content = render_template('sitemap.xml', urls=urls)
+    return Response(xml_content, mimetype='application/xml')
+
+
+@app.route('/rss.xml')
+@check_abuse
+def rss():
+    posts = Post.query.order_by(Post.date.desc()).limit(20).all()
+
+    post_list = []
+    for post in posts:
+        post_list.append({
+            'title': post.title,
+            'link': f"https://pages-lan-consolidation-seo.trycloudflare.com/rss.xml",
+            'description': post.content[:100],  # 일부만 출력
+            'pubDate': post.date.strftime('%a, %d %b %Y %H:%M:%S +0900')
+        })
+
+    xml = render_template('rss.xml', posts=post_list)
+    return Response(xml, mimetype='application/rss+xml')
+
+
+@app.route('/robots.txt')
+def robots_txt():
+    content = """
+User-agent: *
+Allow:/
+"""
+    return Response(content, mimetype='text/plain')
+
+
 @app.errorhandler(404)
 def page_not_found(e):
+    log_activity("정의되지 않은 페이지 접속", "404")
     return render_template('404.html'), 404
+
+@app.route('/log', methods=['GET', 'POST'])
+def view_log():
+    correct_password = 'password'
+
+    if request.method == 'POST':
+        password = request.form.get('password')
+        if password != correct_password:
+            log_activity("/log 비밀번호 틀림", "401")
+            return """
+            <h3 style="display: flex; justify-content: center; align-items: center;">비밀번호가 틀렸습니다.</h3>
+            <form method="POST" style="display: flex; justify-content: center; align-items: center;">
+                <input type="password" name="password" placeholder="비밀번호 입력">
+                <button type="submit">확인</button>
+            </form>
+            """
+    else:
+        return """
+        <h3 style="display: flex; justify-content: center; align-items: center;">로그 보기 위한 비밀번호를 입력하세요:</h3>
+        <form method="POST" style="display: flex; justify-content: center; align-items: center;">
+            <input type="password" name="password" placeholder="비밀번호 입력">
+            <button type="submit">확인</button>
+        </form>
+        """
+
+
+    log_path = 'flask.log'
+    if not os.path.exists(log_path):
+        return "로그 파일이 존재하지 않습니다.", 404
+
+    # 필터 파라미터 가져오기
+    filter_type = request.args.get('filter', 'today')
+
+    log_activity(f"/log {filter_type} 접속", "200")
+    
+    # 현재 시간 기준으로 필터링 날짜 계산
+    now = datetime.now()
+    
+    if filter_type == 'today':
+        start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        title = "오늘"
+    elif filter_type == 'yesterday':
+        start_date = (now - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+        end_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        title = "어제"
+    elif filter_type == 'week':
+        start_date = now - timedelta(days=7)
+        title = "지난 1주일"
+    elif filter_type == 'month':
+        start_date = now - timedelta(days=30)
+        title = "지난 1개월"
+    elif filter_type == 'year':
+        start_date = now - timedelta(days=365)
+        title = "지난 1년"
+    else:  # all
+        start_date = None
+        title = "전체"
+
+    # 로그 파일 읽기 및 필터링
+    filtered_logs = []
+    with open(log_path, 'r', encoding='utf-8', errors='replace') as f:
+        for line in f:
+            if start_date:
+                try:
+                    # "time: " 이후 날짜만 추출
+                    log_date_str = line.split('time: ')[1].split(' ip:')[0].strip()
+                    log_date = datetime.strptime(log_date_str, '%Y-%m-%d %H:%M:%S')
+                    
+                    if filter_type == 'yesterday':
+                        if start_date <= log_date < end_date:
+                            filtered_logs.append(line.strip())
+                    else:
+                        if log_date >= start_date:
+                            filtered_logs.append(line.strip())
+                except (ValueError, IndexError):
+                    continue
+            else:
+                filtered_logs.append(line.strip())
+
+
+    # 최신 로그가 위에 오도록 역순 정렬
+    filtered_logs.reverse()
+
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title> Log Viewer - {title}</title>
+        <meta charset="utf-8">
+        <style>
+            body {{ font-family: 'Courier New', monospace; margin: 20px; background-color: #f5f5f5; }}
+            .header {{ background-color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+            .filters {{ margin-bottom: 20px; }}
+            .filters a {{ 
+                display: inline-block; margin-right: 10px; padding: 8px 15px; 
+                background-color: #007bff; color: white; text-decoration: none; 
+                border-radius: 4px; transition: background-color 0.3s;
+            }}
+            .filters a:hover {{ background-color: #0056b3; }}
+            .filters a.active {{ background-color: #28a745; }}
+            .log-container {{ 
+                background-color: #2d3748; color: #e2e8f0; padding: 20px; 
+                border-radius: 8px; max-height: 80vh; overflow-y: auto;
+                font-size: 13px; line-height: 1.4;
+            }}
+            .log-line {{ 
+                margin-bottom: 8px; padding: 4px 0; border-bottom: 1px solid #4a5568;
+                word-wrap: break-word;
+            }}
+            .log-line:hover {{ background-color: #4a5568; }}
+            .stats {{ margin-bottom: 15px; font-weight: bold; color: #333; }}
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h2> Log Viewer - {title}</h2>
+            <div class="filters">
+                <a href="/log?filter=today" {'class="active"' if filter_type == 'today' else ''}>오늘</a>
+                <a href="/log?filter=yesterday" {'class="active"' if filter_type == 'yesterday' else ''}>어제</a>
+                <a href="/log?filter=week" {'class="active"' if filter_type == 'week' else ''}>지난 1주일</a>
+                <a href="/log?filter=month" {'class="active"' if filter_type == 'month' else ''}>지난 1개월</a>
+                <a href="/log?filter=year" {'class="active"' if filter_type == 'year' else ''}>지난 1년</a>
+                <a href="/log?filter=all" {'class="active"' if filter_type == 'all' else ''}>전체</a>
+            </div>
+            <div class="stats">총 {len(filtered_logs)}개의 로그</div>
+        </div>
+        <div class="log-container">
+            {"".join(f'<div class="log-line">{log.replace("<", "&lt;").replace(">", "&gt;")}</div>' for log in filtered_logs) if filtered_logs else '<div class="log-line">해당 기간에 로그가 없습니다.</div>'}
+        </div>
+    </body>
+    </html>
+    """
 
 
 
@@ -429,7 +907,31 @@ def get_data_size():
 def get_posts():
     is_valid, message = is_valid_client()
     if not is_valid:
+        log_activity("요청 url 변조 감지", "400")
         return jsonify({'success': False, 'message': message}), 400
+    
+    ip = get_real_ip()
+    vpn_used = is_vpn(ip)
+    if vpn_used:
+        # VPN 사용자에게 HTML 페이지 반환
+        return render_template_string("""
+            <!DOCTYPE html>
+            <html lang="ko">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>VPN 감지됨</title>
+            </head>
+            <body>
+                <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background-color: #f8f9fa; color: #333; font-family: Arial, sans-serif;">
+                    <h1 style="font-size: 72px; margin-bottom: 0; text-align: center;">VPN 감지됨</h1>
+                    <p style="font-size: 18px; margin-top: 10px;">VPN 또는 프록시가 활성화되어 있습니다.</p>
+                    <p style="font-size: 18px;">사이트 이용을 위해 VPN을 해제해 주세요.</p>
+                </div>
+            </body>
+            </html>
+        """)
+
 
     posts = Post.query.order_by(Post.date.desc()).limit(100).all()
     post_list = []
@@ -454,20 +956,39 @@ def get_posts():
 @limiter.limit("15 per minute") # 추가적인 분당 제한
 @check_abuse
 def create_post():
+
+    data = request.get_json()
+    turnstile_token = data.get("cf_turnstile_token")
+    if not turnstile_token or not verify_turnstile_token(turnstile_token, get_real_ip()):
+        log_activity("Turnstile 인증 실패", "400")
+        return jsonify({'success': False, 'message': 'Turnstile 인증 실패'}), 400
+
+
     is_valid, message = is_valid_client()
     if not is_valid:
+        log_activity("요청 url 변조 감지", "400")
         return jsonify({'success': False, 'message': message}), 400
+    
 
+    ip = get_real_ip()
+    vpn_used = is_vpn(ip)
+    if vpn_used:
+        if vpn_used:
+            return jsonify({'success': False, 'message': 'VPN 또는 프록시가 활성화되어 있습니다. 사이트 이용을 위해 VPN을 해제해 주세요.'}), 403
+
+    
     data = request.get_json()
     title = data.get('title')
     content = data.get('content')
     client_id = get_session_client_id() # 세션에서 client_id 가져오기
 
     if not validate_client_id(client_id):
+        log_activity("요청 uuid 변조 감지", "400")
         return jsonify({'success': False, 'message': '유효하지 않은 client_id입니다.'}), 400
 
     # 비정상 유니코드 포함 검사
     if contains_invalid_unicode(title) or contains_invalid_unicode(content):
+        log_activity("요청문에 비정상 유니코드 감지", "400")
         return jsonify({'success': False, 'message': '제목이나 내용에 허용되지 않는 문자가 포함되어 있습니다.'}), 400
 
 
@@ -476,6 +997,7 @@ def create_post():
     if not content or len(content.strip()) < 1 or len(content) > 500:
         return jsonify({'success': False, 'message': '내용은 1자 이상 500자 이하로 입력해주세요.'}), 400
     if is_spam_by_ip(): # IP 기반 도배 감지
+        log_activity("게시물 도배 감지", "429")
         # 해당 IP 주소로 작성된 모든 게시물 삭제
         posts_to_delete = Post.query.filter_by(client_id=client_id).all() # client_id 기반으로 삭제 (세션 유지 가정)
         for post in posts_to_delete:
@@ -491,15 +1013,36 @@ def create_post():
     new_post = Post(title=title, content=content, client_id=client_id)
     db.session.add(new_post)
     db.session.commit()
+    log_activity("게시물 업로드", "200", f"제목: {title[:20]}{'...' if len(title) > 20 else ''}")
 
     return jsonify({'success': True})
 
+
+
+from flask_limiter.errors import RateLimitExceeded
+
+@app.errorhandler(RateLimitExceeded)
+def ratelimit_handler(e):
+    return jsonify({
+        "success": False,
+        "message": "10초에 한 번만 누를 수 있습니다. 잠시 후 다시 시도해주세요."
+    }), 429
+
+
 @app.route('/post/<int:post_id>/vote', methods=['POST'])
 @check_abuse
+@limiter.limit("1 per 10 seconds")
 def vote_post(post_id):
     is_valid, message = is_valid_client()
     if not is_valid:
+        log_activity("요청 url 변조 감지", "400")
         return jsonify({'success': False, 'message': message}), 400
+    
+    ip = get_real_ip()
+    vpn_used = is_vpn(ip)
+    if vpn_used:
+        if vpn_used:
+            return jsonify({'success': False, 'message': 'VPN 또는 프록시가 활성화되어 있습니다. 사이트 이용을 위해 VPN을 해제해 주세요.'}), 403
 
     data = request.get_json()
     like = data.get('like', 0)
@@ -507,13 +1050,23 @@ def vote_post(post_id):
 
     # like와 dislike 값이 0 또는 1만 허용하도록 검증
     if like not in [0, 1] or dislike not in [0, 1]:
-        return jsonify({'success': False, 'message': '도배 방지.'}), 400
+        # log_activity("비정상 추천/비추천 감지", "400", f"like: {like}, dislike: {dislike}번 요청")
+        return jsonify({'success': False, 'message': '도배 방지'}), 400
 
 
     post = Post.query.get_or_404(post_id)
     post.likes += like
     post.dislikes += dislike
     db.session.commit()
+
+    if like == 1:
+        log_activity("추천 업로드", "200")
+    elif dislike == 1:
+        log_activity("비추천 업로드", "200")
+    
+    # if (like != 1) or (dislike != 1):
+        # log_activity("비정상 추천/비추천 감지", "400", f"like: {like}, dislike: {dislike}번 요청")
+
     return jsonify({'success': True, 'likes': post.likes, 'dislikes': post.dislikes})
 
 @app.route('/post/<int:post_id>/comment', methods=['POST'])
@@ -521,23 +1074,33 @@ def vote_post(post_id):
 def comment_on_post(post_id):
     is_valid, message = is_valid_client()
     if not is_valid:
+        log_activity("요청 url 변조 감지", "400")
         return jsonify({'success': False, 'message': message}), 400
+    
+    ip = get_real_ip()
+    vpn_used = is_vpn(ip)
+    if vpn_used:
+        if vpn_used:
+            return jsonify({'success': False, 'message': 'VPN 또는 프록시가 활성화되어 있습니다. 사이트 이용을 위해 VPN을 해제해 주세요.'}), 403
 
     data = request.get_json()
     text = data.get('text')
     client_id = get_session_client_id() # 세션에서 client_id 가져오기
 
     if not validate_client_id(client_id):
+        log_activity("요청 uuid 변조 감지", "400")
         return jsonify({'success': False, 'message': '유효하지 않은 client_id입니다.'}), 400
 
     # 비정상 유니코드 포함 여부 검사
     if contains_invalid_unicode(text):
+        log_activity("요청문에 비정상 유니코드 감지", "400")
         return jsonify({'success': False, 'message': '댓글에 허용되지 않는 문자가 포함되어 있습니다.'}), 400
 
     if not text or len(text.strip()) < 1 or len(text) > 500:
         return jsonify({'success': False, 'message': '댓글은 1자 이상 500자 이하로 입력해주세요.'}), 400
 
     if is_comment_spam_by_ip(): # IP 기반 도배 감지
+        log_activity("댓글 도배 감지", "429")
         # 해당 IP 주소로 작성된 최근 댓글 삭제 (도배성 댓글 가정)
         comments_to_delete = Comment.query.filter_by(client_id=client_id).order_by(Comment.date.desc()).limit(5).all() # 최근 5개 댓글 삭제 예시
         for comment in comments_to_delete:
@@ -552,6 +1115,7 @@ def comment_on_post(post_id):
     db.session.add(new_comment)
     db.session.commit()
 
+    log_activity("댓글 업로드", "200", f"댓글: {text[:30]}{'...' if len(text) > 30 else ''}")
     return jsonify({'success': True, 'comment_id': new_comment.id, 'text': new_comment.text, 'date': new_comment.date.strftime('%Y-%m-%d %H:%M:%S')})
 
 @app.route('/popular_posts', methods=['GET'])
@@ -599,63 +1163,6 @@ def get_comment_count():
     count = Comment.query.count()
     return jsonify({'success': True, 'count': count})
 
-# 관리자 비밀번호 (하드코딩)
-ADMIN_PASSWORD = app.secret_key
-
-@app.route('/super', methods=['GET', 'POST'])
-def super_page():
-    if request.method == 'POST':
-        entered_password = request.form.get('password')
-        if entered_password == ADMIN_PASSWORD:
-            return redirect(url_for('admin_dashboard'))
-        else:
-            return render_template('super.html', error="비밀번호가 틀렸습니다.")
-    return render_template('super.html')
-
-@app.route('/admin_dashboard')
-def admin_dashboard():
-    posts = Post.query.order_by(Post.date.desc()).all()
-
-    # 댓글에 작성자 정보(user) 추가하기
-    for post in posts:
-        for comment in post.comments:
-            # comment.user를 통해 작성자 정보 가져오기
-            comment.user = User.query.filter_by(id=comment.client_id).first()
-
-    return render_template('admin_dashboard.html', posts=posts)
-
-@app.route('/admin/edit_post/<int:post_id>', methods=['GET', 'POST'])
-def edit_post(post_id):
-    post = Post.query.get_or_404(post_id)
-    if request.method == 'POST':
-        post.title = request.form.get('title')
-        post.content = request.form.get('content')
-        db.session.commit()
-        return redirect(url_for('admin_dashboard'))
-    return render_template('edit_post.html', post=post)
-
-@app.route('/admin/delete_post/<int:post_id>', methods=['POST'])
-def delete_post(post_id):
-    post = Post.query.get_or_404(post_id)
-    db.session.delete(post)
-    db.session.commit()
-    return redirect(url_for('admin_dashboard'))
-
-@app.route('/admin/delete_comment/<int:comment_id>', methods=['POST'])
-def delete_comment(comment_id):
-    comment = Comment.query.get_or_404(comment_id)
-    db.session.delete(comment)
-    db.session.commit()
-    return redirect(url_for('admin_dashboard'))
-
-@app.route('/admin/edit_comment/<int:comment_id>', methods=['POST'])
-def edit_comment(comment_id):
-    comment = Comment.query.get_or_404(comment_id)
-    new_text = request.form.get('new_text')
-    if new_text:
-        comment.text = new_text
-        db.session.commit()
-    return redirect(url_for('admin_dashboard'))
 
 # 서버 실행
 if __name__ == '__main__':
