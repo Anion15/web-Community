@@ -306,8 +306,8 @@ def is_valid_client():
     from flask import request
 
     # 허용된 Origin과 Referer 접두사
-    allowed_origin_prefix = ''
-    allowed_referer_prefix = ''
+    allowed_origin_prefix = 'https://conservative-tier-cathedral-drew.trycloudflare.com/'
+    allowed_referer_prefix = 'https://conservative-tier-cathedral-drew.trycloudflare.com/'
 
     # 요청 헤더에서 정보 추출
     origin = request.headers.get('Origin')
@@ -411,7 +411,7 @@ def contains_invalid_unicode(text):
     return re.search(pattern, text) is not None
 
 
-CF_TURNSTILE_SECRET = "Your-SecretKey"
+CF_TURNSTILE_SECRET = ""
 
 def verify_turnstile_token(token, remote_ip=None):
     url = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
@@ -663,26 +663,26 @@ def release_notes():
 def sitemap():
     urls = [
         {
-            'loc': '/',
-            'lastmod': '',
+            'loc': 'https://pages-lan-consolidation-seo.trycloudflare.com/',
+            'lastmod': '2025-06-23',
             'changefreq': 'daily',
             'priority': '1.0'
         },
         {
-            'loc': '/info',
-            'lastmod': '',
+            'loc': 'https://pages-lan-consolidation-seo.trycloudflare.com/info',
+            'lastmod': '2025-06-23',
             'changefreq': 'weekly',
             'priority': '0.8'
         },
         {
-            'loc': '/history',
-            'lastmod': '',
+            'loc': 'https://pages-lan-consolidation-seo.trycloudflare.com/history',
+            'lastmod': '2025-06-23',
             'changefreq': 'monthly',
             'priority': '0.7'
         },
         {
-            'loc': '/release-notes',
-            'lastmod': '',
+            'loc': 'https://pages-lan-consolidation-seo.trycloudflare.com/release-notes',
+            'lastmod': '2025-06-23',
             'changefreq': 'monthly',
             'priority': '0.7'
         },
@@ -713,6 +713,57 @@ def rss():
 @app.route('/robots.txt')
 def robots_txt():
     content = """
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@- .!@@@;,,,,,,,,,,-@@@@- .!@@@@@=,,,,:@@@@@@@@
+# @@@@-  !@@@:          ,@@@@,  !@@@@@~     #@@@@@@@
+# @@@@-  !@@@:          ,@@@@-  !@@@@#.     ;@@@@@@@
+# @@@@-  !@@@=.   ~$$$$$$@@@@-  !@@@@!   .  ,@@@@@@@
+# @@@@-  ,~~$@#-   -#@@@@@$,,.  !@@@@-  ,!   =@@@@@@
+# @@@@-     =@@@~   ,=@@@@$     !@@@$   ;#.  ~@@@@@@
+# @@@@-     =@@;     .!@@@$     !@@@;   #@:   #@@@@@
+# @@@@-  ~;;##~   ,,   ~#@#*=,  !@@@,  -@@$   ;@@@@@
+# @@@@-  !@@@:   ~##~   -@@@@-  !@@=   !@@@-  .@@@@@
+# @@@@-  !@@@:  !@@@@;  ,@@@@-  !@@:  .#@@@*   *@@@@
+# @@@@-  !@@@:.=@@@@@@=.,@@@@-  !@@-,,:@@@@@-,,:@@@@
+# @@@@-  !@@@*#@@@@@@@@#~@@@@!;;=@@@@@@@@@@@@@@@@@@@
+# @@@@==*$@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@$==========$@@@@@@@@@@#===========#@@@@@@@@
+# @@@@@=,            ,=@@@@@@@;.            :#@@@@@@
+# @@@@$.              .$@@@@@;               ~@@@@@@
+# @@@@:   ,,,,,,,,,,.  ~@@@@#.  -~~~~~~~~~-   =@@@@@
+# @@@@,  !@@@@@@@@@@*  ,@@@@=  .@@@@@@@@@@@-  !@@@@@
+# @@@@-  :$$$$$$$$$$;  ,@@@@$  .#@@@@@@@@@#,  !@@@@@
+# @@@@;                :@@@@@.  ...........  .#@@@@@
+# @@@@#,              ,#@@@@@*               ;@@@@@@
+# @@@@@#:.          .:#@@@@@@@=-.         .,*@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
 User-agent: *
 Allow:/
 """
@@ -726,7 +777,7 @@ def page_not_found(e):
 
 @app.route('/log', methods=['GET', 'POST'])
 def view_log():
-    correct_password = 'password'
+    correct_password = ''
 
     if request.method == 'POST':
         password = request.form.get('password')
@@ -810,7 +861,7 @@ def view_log():
     <!DOCTYPE html>
     <html>
     <head>
-        <title> Log Viewer - {title}</title>
+        <title>상정인사이드 Log Viewer - {title}</title>
         <meta charset="utf-8">
         <style>
             body {{ font-family: 'Courier New', monospace; margin: 20px; background-color: #f5f5f5; }}
@@ -838,7 +889,7 @@ def view_log():
     </head>
     <body>
         <div class="header">
-            <h2> Log Viewer - {title}</h2>
+            <h2>상정인사이드 Log Viewer - {title}</h2>
             <div class="filters">
                 <a href="/log?filter=today" {'class="active"' if filter_type == 'today' else ''}>오늘</a>
                 <a href="/log?filter=yesterday" {'class="active"' if filter_type == 'yesterday' else ''}>어제</a>
@@ -1162,6 +1213,90 @@ def get_comment_count():
 
     count = Comment.query.count()
     return jsonify({'success': True, 'count': count})
+
+@app.route('/posts/last_update', methods=['GET'])
+@check_abuse
+def get_posts_last_update():
+    """최신 게시물들의 마지막 업데이트 시간을 반환"""
+    is_valid, message = is_valid_client()
+    if not is_valid:
+        log_activity("요청 url 변조 감지", "400")
+        return jsonify({'success': False, 'message': message}), 400
+    
+    ip = get_real_ip()
+    vpn_used = is_vpn(ip)
+    if vpn_used:
+        return jsonify({'success': False, 'message': 'VPN 또는 프록시가 활성화되어 있습니다. 사이트 이용을 위해 VPN을 해제해 주세요.'}), 403
+
+    try:
+        # 최신 게시물의 마지막 업데이트 시간 가져오기
+        # 게시물 생성 시간 또는 최신 댓글 시간 중 더 최신 것을 기준으로 함
+        latest_post = Post.query.order_by(Post.date.desc()).first()
+        latest_comment = Comment.query.order_by(Comment.date.desc()).first()
+        
+        last_update = None
+        if latest_post and latest_comment:
+            last_update = max(latest_post.date, latest_comment.date)
+        elif latest_post:
+            last_update = latest_post.date
+        elif latest_comment:
+            last_update = latest_comment.date
+        
+        if last_update:
+            # 타임스탬프를 문자열로 변환
+            last_update_str = last_update.strftime('%Y-%m-%d %H:%M:%S.%f')
+            return jsonify({'success': True, 'last_update': last_update_str})
+        else:
+            return jsonify({'success': True, 'last_update': None})
+            
+    except Exception as e:
+        return jsonify({'success': False, 'message': '서버 오류가 발생했습니다.'}), 500
+
+
+@app.route('/popular_posts/last_update', methods=['GET'])
+@check_abuse
+def get_popular_posts_last_update():
+    """인기 게시물들의 마지막 업데이트 시간을 반환"""
+    is_valid, message = is_valid_client()
+    if not is_valid:
+        return jsonify({'success': False, 'message': message}), 400
+
+    ip = get_real_ip()
+    vpn_used = is_vpn(ip)
+    if vpn_used:
+        return jsonify({'success': False, 'message': 'VPN 또는 프록시가 활성화되어 있습니다. 사이트 이용을 위해 VPN을 해제해 주세요.'}), 403
+
+    try:
+        # 인기 게시물 상위 10개에 대한 마지막 업데이트 시간
+        popular_posts = Post.query.order_by(Post.likes.desc()).limit(10).all()
+        
+        if not popular_posts:
+            return jsonify({'success': True, 'last_update': None})
+        
+        # 인기 게시물들과 그 댓글들의 최신 업데이트 시간 찾기
+        latest_times = []
+        
+        for post in popular_posts:
+            latest_times.append(post.date)
+            # 해당 게시물의 최신 댓글 시간도 확인
+            latest_comment = Comment.query.filter_by(post_id=post.id).order_by(Comment.date.desc()).first()
+            if latest_comment:
+                latest_times.append(latest_comment.date)
+        
+        # 투표(좋아요/싫어요) 변경사항도 고려해야 하는 경우
+        # 별도의 vote_log 테이블이 있다면 그것도 확인해야 함
+        # 현재는 단순히 게시물과 댓글의 시간만 확인
+        
+        last_update = max(latest_times) if latest_times else None
+        
+        if last_update:
+            last_update_str = last_update.strftime('%Y-%m-%d %H:%M:%S.%f')
+            return jsonify({'success': True, 'last_update': last_update_str})
+        else:
+            return jsonify({'success': True, 'last_update': None})
+            
+    except Exception as e:
+        return jsonify({'success': False, 'message': '서버 오류가 발생했습니다.'}), 500
 
 
 # 서버 실행
