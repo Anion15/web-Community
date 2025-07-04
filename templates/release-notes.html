@@ -56,6 +56,117 @@
     </div>
   </header>
   <body class="bg-gray-100 dark:bg-darkbg text-gray-800 dark:text-gray-100 transition-all">
+    <style>
+      @keyframes fadeInSlide {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+
+      .list-group {
+        display: flex;
+        flex-direction: column;
+        padding-left: 0;
+        margin-bottom: 0;
+        border-radius: 0.375rem;
+        overflow: hidden;
+      }
+
+      .list-group-item {
+        position: relative;
+        display: block;
+        padding: 0.75rem 1.25rem;
+        background-color: #fff;
+        border: 1px solid rgba(0, 0, 0, 0.125);
+        color: #212529;
+        text-decoration: none;
+        transition: background-color 0.15s ease-in-out, transform 0.2s ease;
+      }
+
+      .list-group-item + .list-group-item {
+        border-top: none;
+      }
+
+      .list-group-item:hover {
+        z-index: 1;
+        background-color: #f8f9fa;
+        font-weight: bold;
+        transform: scale(1.01);
+      }
+
+      .list-group-item:active {
+        background-color: #e9ecef;
+      }
+
+      #popMenu {
+        position: absolute;
+        display: none;
+        width: 280px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+        border-radius: 0.5rem;
+        z-index: 99999;
+        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.15);
+        overflow: hidden;
+        animation: fadeInSlide 0.3s ease forwards;
+      }
+    </style>
+    </head>
+
+    <div id="popMenu" class="list-group">
+    <a href="/" class="list-group-item list-group-item-action">🏠 홈으로 가기</a>
+    <a href="/info" class="list-group-item list-group-item-action">📘 소개 및 이용규칙</a>
+    <a href="/history" class="list-group-item list-group-item-action">📊 통계 및 정보</a>
+    <a href="https://buymeacoffee.com/sjinside" class="list-group-item list-group-item-action">☕ 후원하기</a>
+    </div>
+
+    <script>
+    const popMenu = document.getElementById('popMenu');
+
+    document.addEventListener('contextmenu', e => {
+      e.preventDefault();
+
+      // 1. 잠깐 보여줘서 크기 측정
+      popMenu.style.display = 'block';
+      popMenu.style.visibility = 'hidden';
+
+      const menuWidth = popMenu.offsetWidth;
+      const menuHeight = popMenu.offsetHeight;
+
+      // 2. 마우스 좌표 + 위치 조정
+      let left = e.pageX + 5;
+      let top = e.pageY + 5;
+
+      const maxLeft = window.scrollX + window.innerWidth - menuWidth - 10;
+      const maxTop = window.scrollY + window.innerHeight - menuHeight - 10;
+
+      if (left > maxLeft) left = maxLeft;
+      if (top > maxTop) top = maxTop;
+
+      popMenu.style.left = `${left}px`;
+      popMenu.style.top = `${top}px`;
+
+      // 3. 진짜 보여줌
+      popMenu.style.visibility = 'visible';
+      popMenu.style.animation = 'none';
+      void popMenu.offsetHeight; // 리플로우
+      popMenu.style.animation = 'fadeInSlide 0.3s ease forwards';
+    });
+
+    document.addEventListener('click', e => {
+      if (!popMenu.contains(e.target)) {
+        popMenu.style.display = 'none';
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      popMenu.style.display = 'none';
+    });
+
+    window.addEventListener('scroll', () => {
+      popMenu.style.display = 'none';
+    });
+    </script>
 
     <div class="max-w-4xl mx-auto px-6 py-12">
       <h1 class="text-4xl font-bold text-center mb-10 text-primary">📦 상정인사이드 릴리즈 노트</h1>
@@ -100,6 +211,31 @@
             <li>🧱 <strong>모든 서비스 하단에 Footer 추가</strong></li>
             <li>📱 <strong>모바일 환경 호환성 향상</strong> (너비 511px 이하 대응)</li>
             <li>🦉 <strong>Footer 상단에 게시물 갯수를 표시하는 기능 추가</strong></li>
+          </ul>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 shadow-md rounded-2xl p-6">
+          <h2 class="text-xl font-semibold mb-2">🗓️ 2025년 6월 7일</h2>
+          <ul class="list-disc list-inside text-gray-700 dark:text-gray-300">
+            <li>🫰 <strong>후원시스템 'Buy me a coffee'으로 변경</strong></li>
+            <li>🖱️ <strong>모든 서비스 우클릭 디자인 변경</strong></li>
+            <li>🦉 <strong>홈 화면 헤더 우측 버튼을 화면 크기에 맞춰 반응형으로 조정</strong></li>
+          </ul>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 shadow-md rounded-2xl p-6">
+          <h2 class="text-xl font-semibold mb-2">업데이트 예정</h2>
+          <ul class="list-disc list-inside text-gray-700 dark:text-gray-300">
+            <li>🌈 <strong>자신이 쓴 게시물/댓글 색상 표시 변경</strong></li>
+            <li>🗳️ <strong>투표 게시물 기능 추가</strong></li>
+            <li>🕊️ <strong>이미지 첨부 기능 추가</strong></li>
+            <li>👥 <strong>동시접속자 수 표시 추가</strong></li>
+            <li>🤺 <strong>설정(우클릭 메뉴, 테마, 디자인 변경)추가</strong></li>
+            <li>❕ <strong>게시물 및 댓글 신고 기능 추가</strong></li>
+            <li>🔍 <strong>게시물 및 댓글 검색 기능 추가</strong></li>
+            <li>♥️ <strong>모바일 전용 가로 광고 추가</strong></li>
+            <li>🚀 <strong>하단(footer)에 상정인사이드 공식 디스코드 참가 링크 추가</strong></li>
+            <li>🏃‍♂️‍➡️ <strong>네이버, 다음 검색 추가</strong></li>
           </ul>
         </div>
       </div>
