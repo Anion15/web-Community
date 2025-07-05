@@ -435,6 +435,33 @@
     .settings-content {
       overflow: visible;
     }
+
+    #turnstile-wrapper {
+      min-height: 65px;
+      height: 65px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #turnstile-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    #turnstile-placeholder {
+      height: 65px;
+      width: 100%;
+      background: transparent;
+      pointer-events: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+
   </style>
 </head>
 <body class="flex flex-col min-h-screen bg-gray-100">
@@ -941,7 +968,10 @@
         <span class="text-xs text-gray-500">음란물, 차별·비하·혐오, 초상권·저작권 침해 게시물은 민형사상 책임이 따를 수 있습니다.</span>
         <input id="title" name="title" placeholder="제목" class="w-full border rounded px-3 py-2"/>
         <textarea id="content" name="content" placeholder="내용" class="w-full border rounded px-3 py-2"></textarea>
-        <div id="turnstile-container" class="cf-turnstile" data-sitekey="0x4AAAAAABf0RFVAV6Ydy0GG" data-theme="light" data-callback="onCaptchaSuccess"></div>
+        <div id="turnstile-wrapper">
+          <div id="turnstile-placeholder"></div>
+          <div id="turnstile-container" class="cf-turnstile" data-sitekey="0x4AAAAAABf0RFVAV6Ydy0GG" data-theme="light" data-callback="onCaptchaSuccess"></div>
+        </div>
 
         <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">작성하기</button>
       </form>
@@ -953,7 +983,16 @@
         function updateTurnstileTheme() {
           const isDarkMode = document.body.classList.contains('dark-theme');
           const theme = isDarkMode ? 'dark' : 'light';
+
+          const container = document.getElementById('turnstile-container');
+          const placeholder = document.getElementById('turnstile-placeholder');
           
+          // 플레이스홀더를 항상 표시 상태로 유지
+          if (placeholder) {
+            placeholder.style.visibility = 'visible';
+            placeholder.style.zIndex = '2';
+          }
+
           // 기존 Turnstile 제거 (안전하게)
           if (turnstileWidgetId !== null && typeof turnstile !== 'undefined') {
             try {
@@ -964,25 +1003,32 @@
             }
           }
           
-          // 컨테이너 확인 및 새로운 Turnstile 렌더링
-          const container = document.getElementById('turnstile-container');
           if (container && typeof turnstile !== 'undefined') {
             // 컨테이너 비우기
             container.innerHTML = '';
             
-            // 잠시 대기 후 렌더링 (DOM 업데이트 시간 확보)
-            setTimeout(() => {
-              try {
-                turnstileWidgetId = turnstile.render(container, {
-                  sitekey: '0x4AAAAAABf0RFVAV6Ydy0GG',
-                  theme: theme,
-                  callback: onCaptchaSuccess,
-                  'error-callback': onCaptchaError
-                });
-              } catch (error) {
-                console.error('Turnstile 렌더링 오류:', error);
+            // 동기적으로 렌더링 시도
+            try {
+              turnstileWidgetId = turnstile.render(container, {
+                sitekey: '0x4AAAAAABf0RFVAV6Ydy0GG',
+                theme: theme,
+                callback: function(token) {
+                  onCaptchaSuccess(token);
+                  // 성공 시 플레이스홀더 숨기기
+                  if (placeholder) {
+                    placeholder.style.visibility = 'hidden';
+                    placeholder.style.zIndex = '1';
+                  }
+                },
+                'error-callback': onCaptchaError
+              });
+            } catch (error) {
+              console.error('Turnstile 렌더링 오류:', error);
+              // 오류 시에도 플레이스홀더 유지
+              if (placeholder) {
+                placeholder.style.visibility = 'visible';
               }
-            }, 100);
+            }
           }
         }
 
@@ -1056,6 +1102,7 @@
           <li><a href="/release-notes" class="text-gray-600 hover:text-blue-600 transition">릴리즈 노트</a></li>
           <li><a href="https://github.com/anion15" class="text-gray-600 hover:text-blue-600 transition">개발자의 깃허브</a></li>
           <li><a href="http://anion15.github.io/hangang.html" class="text-gray-600 hover:text-blue-600 transition">개발자의 다른 사이트</a></li>
+          <li><a href="/term" class="text-gray-600 hover:text-blue-600 transition"><u><b>개인정보처리방침</b></u></a></li>
         </ul>
       </div>
 
