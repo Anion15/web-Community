@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <link rel='icon' type="images/png" href="https://raw.githubusercontent.com/Anion15/anion15.github.io/refs/heads/main/Preview.png">
+  <title>개인정보처리방침 - 상정인사이드</title>
+  <meta name="description" content="상정인사이드 개인정보처리방침">
+  <meta name="keywords" content="개인정보처리방침, 상정인사이드, 프라이버시">
+  <meta name="author" content="anion15">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Noto Sans KR', sans-serif; overflow-x: hidden; -ms-overflow-style: none; }
+    ::-webkit-scrollbar { display: none;}
+  </style>
+  <style>
+    body { font-family: 'Noto Sans KR', sans-serif; overflow-x: hidden; -ms-overflow-style: none; }
+    ::-webkit-scrollbar { display: none;}
+    @media (max-width: 511px) {body {width: 125%;}}
+    @media (max-width: 410px) {body {width: 150%;}}
+    @media (max-width: 342px) {body {width: 175%;}}
+    @media (max-width: 292px) {body {width: 200%;}}
+  </style>
+</head>
+
+<style>
+    /* 다크 테마 스타일 */
+    .dark-theme {
+      background-color: #1a1a1a;
+      color: #e5e7eb;
+    }
+
+    .dark-theme .settings-content {
+      background: #2d2d2d;
+      color: #e5e7eb;
+    }
+
+    .dark-theme .settings-item {
+      border-bottom-color: #4b5563;
+    }
+
+    .dark-theme .theme-select {
+      background: #374151;
+      color: #e5e7eb;
+      border-color: #4b5563;
+    }
+
+    .dark-theme header {
+      background: #2d2d2d;
+      color: #e5e7eb;
+    }
+
+    .dark-theme .bg-white {
+      background-color: #2d2d2d !important;
+      color: #e5e7eb;
+    }
+
+    .dark-theme #site-footer {
+      background: #2d2d2d;
+      color: #e5e7eb;
+    }
+
+    .dark-theme .text-gray-600 {
+      color: #9ca3af !important;
+    }
+
+    .dark-theme .text-gray-800 {
+      color: #e5e7eb !important;
+    }
+
+    .dark-theme .border {
+      border-color: #4b5563;
+    }
+
+    .dark-theme input, .dark-theme textarea {
+      background: #374151;
+      color: #e5e7eb;
+      border-color: #4b5563;
+    }
+
+    .dark-theme input::placeholder, .dark-theme textarea::placeholder {
+      color: #9ca3af;
+    }
+
+    /* 글 작성 폼 다크 테마 */
+    .dark-theme #post-form {
+      background-color: #2d2d2d !important;
+      color: #e5e7eb;
+    }
+
+    /* 버튼 다크 테마 */
+    .dark-theme #latest-btn,
+    .dark-theme #popular-btn {
+      background-color: #374151;
+      color: #e5e7eb;
+    }
+
+    .dark-theme #latest-btn.active,
+    .dark-theme #popular-btn.active {
+      background-color: #2563eb;
+    }
+
+    /* 통계 텍스트 다크 테마 */
+    .dark-theme #stats-text,
+    .dark-theme #end-text {
+      color: #9ca3af !important;
+    }
+
+    /* 메인 배경 다크 테마 */
+    .dark-theme {
+      background-color: #1a1a1a !important;
+    }
+
+    .dark-theme main {
+      background-color: transparent;
+    }
+
+    /* 다크 테마 로고 필터 */
+    .dark-theme header img {
+      filter: brightness(0) invert(1);
+    }
+
+    /* 후원하기 버튼은 로고 필터에서 제외 */
+    .dark-theme header img {
+      filter: brightness(0) invert(1);
+    }
+
+    .dark-theme header a[href*="buymeacoffee"] img {
+      filter: none !important;
+    }
+
+    .dark-theme #mobile-menu a[href*="buymeacoffee"] img {
+      filter: none !important;
+    }
+
+    /* Footer p 태그 다크 테마 */
+    .dark-theme p {
+      color: #e5e7eb !important;
+    }
+
+    .dark-theme #more {
+      background-color: #535353;
+    }
+    .dark-theme #more-m {
+      background-color: #b0b0b0;
+    }
+
+    .dark-theme li {
+      color: #e7e7e7;
+    }
+    .dark-theme h3 {
+      color: #e7e7e7;
+    }
+    .dark-theme #black {
+      color: #1a1a1a;
+    }
+</style>
+<script>
+      // 기본 설정값
+      const defaultSettings = {
+        theme: 'system'
+      };
+
+      // 설정 불러오기
+      function loadSettings() {
+        const saved = localStorage.getItem('sjinside_settings');
+        return saved ? { ...defaultSettings, ...JSON.parse(saved) } : defaultSettings;
+      }
+
+      // 테마 적용 함수
+      function applyTheme(theme) {
+        const body = document.body;
+        body.classList.remove('dark-theme');
+        
+        if (theme === 'dark') {
+          body.classList.add('dark-theme');
+        } else if (theme === 'system') {
+          if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            body.classList.add('dark-theme');
+          }
+        }
+      }
+
+      // 페이지 로드 시 초기 설정
+      document.addEventListener('DOMContentLoaded', function() {
+        const settings = loadSettings();
+        applyTheme(settings.theme);
+        
+        // 시스템 테마 변경 감지
+        if (window.matchMedia) {
+          window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+            if (loadSettings().theme === 'system') {
+              applyTheme('system');
+            }
+          });
+        }
+      });
+</script>
+
+<body class="flex flex-col min-h-screen bg-gray-100">
+    <!--우클릭 이벤트 정의-->
+    <style>
+      @keyframes fadeInSlide {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .list-group {
+        display: flex;
+        flex-direction: column;
+        padding-left: 0;
+        margin-bottom: 0;
+        border-radius: 0.375rem;
+        overflow: hidden;
+      }
+
+      .list-group-item {
+        position: relative;
+        display: block;
+        padding: 0.75rem 1.25rem;
+        background-color: #fff;
+        border: 1px solid rgba(0, 0, 0, 0.125);
+        color: #212529;
+        text-decoration: none;
+        user-select: none;
+        cursor: pointer;
+        transition: background-color 0.15s ease-in-out, transform 0.2s ease;
+      }
+
+      .list-group-item + .list-group-item {
+        border-top: none;
+      }
+
+      .list-group-item:hover {
+        z-index: 1;
+        background-color: #f8f9fa;
+        font-weight: bold;
+        transform: scale(1.01);
+      }
+
+      .list-group-item:active {
+        background-color: #e9ecef;
+      }
+
+      #popMenu {
+        position: absolute;
+        display: none;
+        width: 280px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+        border-radius: 0.5rem;
+        z-index: 9999;
+        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.15);
+        overflow: hidden;
+        animation: fadeInSlide 0.3s ease forwards;
+      }
+
+      .dark-theme #popMenu {
+        background: rgba(45, 45, 45, 0.95);
+      }
+
+      .dark-theme .list-group-item {
+        background-color: #374151;
+        color: #e5e7eb;
+        border-color: #4b5563;
+      }
+
+      .dark-theme .list-group-item:hover {
+        background-color: #4b5563;
+      }
+
+      .dark-theme .list-group-item:active {
+        background-color: #6b7280;
+      }
+
+      /* 다크 테마 버튼 구별 - 더 강력한 스타일링 */
+      .dark-theme #latest-btn,
+      .dark-theme #popular-btn {
+        background-color: #374151 !important;
+        color: #9ca3af !important;
+        border: 2px solid #4b5563 !important;
+      }
+
+      .dark-theme #latest-btn.active {
+        background-color: #2563eb !important;
+        color: white !important;
+        border: 2px solid #2563eb !important;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3) !important;
+      }
+
+      .dark-theme #popular-btn.active {
+        background-color: #dc2626 !important;
+        color: white !important;
+        border: 2px solid #dc2626 !important;
+        box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.3) !important;
+      }
+
+      /* 다크 테마 버튼 색상 변경 */
+      .dark-theme .bg-green-500 {
+        background-color: #059669 !important; /* bg-emerald-500 */
+      }
+
+      .dark-theme .bg-red-500 {
+        background-color: #e11d48 !important; /* bg-rose-500 */
+      }
+    </style>
+
+    <div id="popMenu" class="list-group">
+      <div class="list-group-item" data-action="reload">🔄 새로고침</div>
+      <hr style="margin: 0">
+      <a href="/" class="list-group-item list-group-item-action">🏠 홈으로 가기</a>
+      <a href="/info" class="list-group-item list-group-item-action">📘 소개 및 이용규칙</a>
+      <a href="/history" class="list-group-item list-group-item-action">📊 통계 및 정보</a>
+      <a href="https://buymeacoffee.com/sjinside" class="list-group-item list-group-item-action">☕ 후원하기</a>
+    </div>
+
+    <script>
+      const popMenu = document.getElementById('popMenu');
+
+      document.addEventListener('contextmenu', e => {
+        // 우클릭 비활성화 설정 확인
+        const settings = JSON.parse(localStorage.getItem('sjinside_settings') || '{}');
+        if (settings.rightClickEnabled === false) {
+          // 기본 우클릭 메뉴 허용 (preventDefault 호출하지 않음)
+          return;
+        }
+
+        // 커스텀 우클릭 메뉴 표시
+        e.preventDefault();
+
+        popMenu.style.display = 'block';
+        popMenu.style.visibility = 'hidden';
+
+        const menuWidth = popMenu.offsetWidth;
+        const menuHeight = popMenu.offsetHeight;
+
+        let left = e.pageX + 5;
+        let top = e.pageY + 5;
+
+        const maxLeft = window.scrollX + window.innerWidth - menuWidth - 10;
+        const maxTop = window.scrollY + window.innerHeight - menuHeight - 10;
+
+        if (left > maxLeft) left = maxLeft;
+        if (top > maxTop) top = maxTop;
+
+        popMenu.style.left = `${left}px`;
+        popMenu.style.top = `${top}px`;
+
+        popMenu.style.visibility = 'visible';
+        popMenu.style.animation = 'none';
+        void popMenu.offsetHeight;
+        popMenu.style.animation = 'fadeInSlide 0.3s ease forwards';
+      });
+
+      popMenu.addEventListener('click', async e => {
+        const action = e.target.dataset.action;
+        if (!action) return;
+
+        try {
+          if (action === 'reload') {
+            location.reload();
+          } else if (action === 'settings') {
+            openSettingsModal();
+          }
+        } catch (err) {
+          console.error(err);
+          alert('작업을 수행할 수 없습니다. 브라우저 보안 정책 또는 HTTPS 확인 필요.');
+        } finally {
+          popMenu.style.display = 'none';
+        }
+      });
+
+      document.addEventListener('click', e => {
+        if (!popMenu.contains(e.target)) {
+          popMenu.style.display = 'none';
+        }
+      });
+
+      window.addEventListener('resize', () => {
+        popMenu.style.display = 'none';
+      });
+
+      window.addEventListener('scroll', () => {
+        popMenu.style.display = 'none';
+      });
+    </script>
+    <!--우클릭 이벤트 정의 끝-->
+
+  <header class="bg-white shadow py-4 px-6 mb-6 flex items-center justify-between">
+    <!-- 왼쪽: 로고 -->
+    <div class="flex items-center space-x-4">
+      <a href="https://anion15.github.io">
+        <img src="https://raw.githubusercontent.com/Anion15/anion15.github.io/refs/heads/main/logo-.png" alt="logo" class="w-28 sm:w-32 md:w-36 lg:w-40 xl:w-44" />
+      </a>
+    </div>
+  
+    <!-- 오른쪽: 버튼 그룹 -->
+    <div class="flex space-x-2">
+      <a href="/info"
+         class="bg-gray-600 hover:bg-blue-600 text-white font-semibold
+                text-sm sm:text-base md:text-sm sm:text-xl
+                py-1 px-2 sm:py-2 sm:px-4 md:py-3 md:px-6 rounded">
+        상정인사이드란?
+      </a>
+      <a href="/history"
+         class="bg-gray-600 hover:bg-blue-600 text-white font-semibold
+                text-sm sm:text-base md:text-sm sm:text-xl
+                py-1 px-2 sm:py-2 sm:px-4 md:py-3 md:px-6 rounded">
+        상정인사이드 역사
+      </a>
+    </div>
+  </header>
+
+  <main class="flex-1 container mx-auto px-4 py-8 max-w-4xl">
+    <div class="bg-white rounded-lg shadow-lg p-8">
+      <div class="text-center mb-8">
+        <h1 class="text-4xl font-bold text-gray-800 mb-2">개인정보처리방침</h1>
+        <!-- <p class="text-lg text-gray-600">(개정안)</p> -->
+      </div>
+
+      <div class="prose prose-lg max-w-none text-gray-700 leading-relaxed">
+        <div id="more" class="mb-8 p-6 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+          <p class="text-base">
+            상정인사이드(이하 '사이트')는 이용자의 개인정보 유지 및 보호를 최우선의 목표로 하며, 「개인정보 보호법」, 「정보통신망 이용촉진 및 정보보호 등에 관한 법률」 등 관련된 제반 법령을 준수하여, 이용자의 개인정보를 보호하고자 아래와 같이 개인정보처리방침을 수립 · 공개합니다.
+          </p>
+          <p class="text-base mt-4">
+            상정인사이드의 제반 서비스를 접속하여 이용하는 시점부터 본 방침에 기본적으로 동의한 것으로 간주하며, 아래의 약관은 이를 근거로 하여 법적 효력을 가집니다.
+          </p>
+        </div>
+
+        <section class="mb-8">
+          <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-gray-300 pb-2">제1조 (수집하는 개인정보 항목 및 수집 방법)</h2>
+          <p class="mb-4">본 사이트는 회원가입 없이 운영되는 익명 커뮤니티로, 다음과 같은 개인정보를 자동으로 수집합니다:</p>
+          <ul class="list-disc pl-6 mb-4 space-y-2">
+            <li>이용자의 IP 주소</li>
+            <li>접속 일시 및 활동 시간</li>
+            <li>웹 브라우저 종류 및 버전 등 User-Agent 정보</li>
+            <li>작성 시점에 생성되는 임의의 UUID (익명 사용자 구분용)</li>
+            <li>브라우저의 세션 쿠키 및 고유 식별 쿠키</li>
+          </ul>
+          <div id="more" class="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400">
+            <p class="text-sm">
+              ※ 별도 로그인이나 회원가입 없이 글쓰기, 댓글 작성 등의 활동이 가능합니다. 단, IP와 UUID는 법적으로 개인정보 또는 가명정보에 해당할 수 있으므로 관련 법령에 따라 보호됩니다.
+            </p>
+          </div>
+        </section>
+
+        <section class="mb-8">
+          <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-gray-300 pb-2">제2조 (개인정보 수집 및 이용 목적)</h2>
+          <p class="mb-4">수집된 정보는 아래 목적에 한해 사용되며, 동의 없이 다른 용도로 사용하지 않습니다:</p>
+          <div class="space-y-4">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-700 mb-2">1. 서비스 안정성 및 보안 유지</h3>
+              <ul class="list-disc pl-6 space-y-1">
+                <li>비정상 접근(IP 변조, VPN, 자동화 공격 등) 탐지 및 차단</li>
+                <li>스팸, 도배, 욕설 등 악성 게시물 자동 식별</li>
+              </ul>
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-gray-700 mb-2">2. 운영상 문제 대응 및 감사 기록 보존</h3>
+              <ul class="list-disc pl-6 space-y-1">
+                <li>로그 분석을 통한 이상 행위 추적</li>
+                <li>UUID를 통한 사용자 행위 구분</li>
+              </ul>
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-gray-700 mb-2">3. 법적 요청 대응</h3>
+              <ul class="list-disc pl-6 space-y-1">
+                <li>명예훼손, 협박, 개인정보 침해 등 발생 시 수사기관 협조</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="mb-8">
+          <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-gray-300 pb-2">제3조 (개인정보의 보유 및 이용 기간)</h2>
+          <p class="mb-4">수집된 개인정보는 다음 기준에 따라 최대 2년 간 보관하며, 목적 달성 후에는 지체 없이 파기합니다.</p>
+          <ul class="list-disc pl-6 mb-4 space-y-2">
+            <li>악의적 접근 패턴 분석 및 재접속자 식별 (최대 1~2년 보관)</li>
+            <li>보안 이벤트 및 법적 분쟁 대응 자료로 활용</li>
+            <li>관련 법령에 따른 로그 보관 의무 이행</li>
+          </ul>
+          <p class="text-sm text-gray-600">
+            이용자는 언제든지 삭제를 요청할 수 있으며, 보안상 삭제가 불가능한 항목에 대해서는 그 사유와 법적 근거를 안내드립니다.
+          </p>
+        </section>
+
+        <section class="mb-8">
+          <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-gray-300 pb-2">제4조 (개인정보의 보호 및 암호화 저장)</h2>
+          <p class="mb-4">수집된 정보는 다음 방식으로 안전하게 보호됩니다:</p>
+          <ul class="list-disc pl-6 mb-6 space-y-2">
+            <li>공개키 기반 암호화(Public Key Encryption) 방식 적용</li>
+            <li>암호화된 정보는 운영자도 복호화 불가</li>
+            <li>서버 접근은 인증된 계정만 가능, 접근권한은 제한적으로 부여</li>
+            <li>서버는 방화벽 및 침입탐지시스템(IDS) 적용 상태 유지</li>
+          </ul>
+          <div id="more-m" class="bg-gray-50 p-4 rounded-lg">
+            <h3 id="black" class="text-lg font-semibold text-gray-700 mb-2">서버 로그 접근 권한</h3>
+            <ul class="list-disc pl-6 space-y-1">
+              <li id="black"><strong>접근 가능자:</strong> 운영자(anion15) 및 지정 부운영자</li>
+              <li id="black"><strong>접근 목적:</strong> 보안 이상 탐지, 악성 행위 조사, 법적 요청 대응</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="mb-8">
+          <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-gray-300 pb-2">제5조 (쿠키 사용 및 제3자 제공에 대한 안내)</h2>
+          <div class="mb-6">
+            <h3 class="text-lg font-semibold text-gray-700 mb-2">쿠키 사용 목적</h3>
+            <ul class="list-disc pl-6 space-y-1">
+              <li>익명 사용자 간 식별 유지</li>
+              <li>사용자 경험 최적화</li>
+              <li>광고 서비스 제공 (아래 참고)</li>
+            </ul>
+          </div>
+          <div id="more" class="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
+            <h3 class="text-lg font-semibold text-gray-700 mb-2">개인정보 제3자 제공 없음</h3>
+            <p class="mb-2">
+              사이트는 개인정보를 외부 단체나 사업자에게 제공하지 않습니다. 단, 카카오 애드핏(Kakao AdFit)의 광고 기능을 통해 추적 쿠키 및 광고 관련 정보가 수집될 수 있으며, 이에 대한 동의는 최초 접속 시 제공되는 배너 또는 팝업을 통해 사전 수집됩니다.
+            </p>
+            <p class="text-sm">
+              사용자는 브라우저 설정을 통해 쿠키 저장을 거부하거나 삭제할 수 있습니다.
+            </p>
+          </div>
+        </section>
+
+        <section class="mb-8">
+          <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-gray-300 pb-2">제6조 (이용 제한 및 운영자 권한)</h2>
+          <p class="mb-4">건전한 커뮤니티 운영을 위해, 아래 조치를 운영자가 사전 통보 없이 시행할 수 있습니다:</p>
+          <div class="space-y-4">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-700 mb-2">1. 접근 차단 및 기능 제한</h3>
+              <ul class="list-disc pl-6 space-y-1">
+                <li>VPN, 프록시, 비정상 브라우저 환경 접속 차단</li>
+                <li>도배, 욕설, 시스템 공격 등 차단 조치</li>
+              </ul>
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-gray-700 mb-2">2. 게시물 및 댓글 삭제</h3>
+              <p class="pl-6">부적절하거나 불법성이 의심되는 게시물은 사전 동의 없이 삭제될 수 있습니다.</p>
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-gray-700 mb-2">3. 영구 이용 제한 및 법적 조치</h3>
+              <ul class="list-disc pl-6 space-y-1">
+                <li>서버 또는 클라이언트 로직 분석·우회</li>
+                <li>자동화 공격, 서비스 방해 시</li>
+                <li>UUID/쿠키 조작 시</li>
+              </ul>
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-gray-700 mb-2">4. 법적 대응</h3>
+              <ul class="list-disc pl-6 space-y-1">
+                <li>관련 로그 및 정보를 수사기관에 제출</li>
+                <li>형사 고소 또는 민사 청구 가능</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="mb-8">
+          <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-gray-300 pb-2">제7조 (만 13세 미만 아동 보호 조치)</h2>
+          <p class="mb-4">
+            본 사이트는 만 13세 이상만 사용 가능하며, 명시적인 연령 인증은 진행되지 않지만, 서비스 이용 시 13세 이상임에 자발적으로 동의한 것으로 간주됩니다.
+          </p>
+          <p class="text-sm text-gray-600">
+            13세 미만 아동이 서비스에 접속한 것이 확인될 경우, 즉시 이용을 제한하고 해당 로그를 삭제합니다.
+          </p>
+        </section>
+
+        <section class="mb-8">
+          <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-gray-300 pb-2">제8조 (운영자 정보 및 문의처)</h2>
+          <div id="more" class="bg-blue-50 p-6 rounded-lg">
+            <ul class="space-y-2">
+              <li><strong>운영자:</strong> anion15 (GitHub 닉네임)</li>
+              <li><strong>이메일:</strong> <a href="mailto:vieepanouie.help@gmail.com" class="text-blue-600 hover:text-blue-800">vieepanouie.help@gmail.com</a></li>
+              <li><strong>연락 목적:</strong> 개인정보 열람, 삭제 요청, 신고, 문의 등</li>
+            </ul>
+            <div id="more" class="mt-4 p-3 bg-yellow-50 rounded border-l-4 border-yellow-400">
+              <p class="text-sm">
+                ※ 원활한 대응을 위해 문의 시 접속 IP, 접속 일시, 문의 사유를 함께 기재해 주시기 바랍니다.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="mb-8">
+          <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-gray-300 pb-2">제9조 (정책 효력 및 변경 고지)</h2>
+          <p class="mb-4">
+            본 방침은 사이트 접속과 동시에 동의한 것으로 간주되며, 법적 효력을 가집니다.
+          </p>
+          <p class="mb-4">
+            방침이 변경될 경우, 사이트 내 공지사항을 통해 사전 고지하며, 중요한 변경 사항은 팝업 또는 배너 형태로 별도 안내할 수 있습니다.
+          </p>
+        </section>
+
+        <div class="text-center mt-12 pt-8 border-t-2 border-gray-200">
+          <p class="text-lg font-semibold text-gray-700">최초 시행일: 2025년 7월 5일</p>
+          <p class="text-sm text-gray-600 mt-2">(최종 수정: 2025년 7월 5일)</p>
+        </div>
+      </div>
+    </div>
+  </main>
+  <h1>&nbsp;</h1>
+  <h1>&nbsp;</h1>
+  <h1>&nbsp;</h1>
+  <!--새로운 footer-->
+  <footer id="site-footer" class="bg-white text-gray-800 py-10 px-5 font-sans border-t border-gray-200" style="z-index: 999;">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+      <!-- 소개 -->
+      <div>
+        <h2 class="text-2xl font-bold mb-2">상정인사이드</h2>
+        <p class="text-gray-600">당신의 일상과 생각을 나누는 공간,<br>상정인사이드 커뮤니티입니다.</p>
+      </div>
+
+      <!-- 바로가기 -->
+      <div>
+        <h3 class="text-xl font-semibold mb-2">바로가기</h3>
+        <ul class="space-y-1">
+          <li><a href="/info" class="text-gray-600 hover:text-blue-600 transition">소개 및 이용규칙</a></li>
+          <li><a href="/history" class="text-gray-600 hover:text-blue-600 transition">통계 및 정보</a></li>
+          <li><a href="/release-notes" class="text-gray-600 hover:text-blue-600 transition">릴리즈 노트</a></li>
+          <li><a href="https://github.com/anion15" class="text-gray-600 hover:text-blue-600 transition">개발자의 깃허브</a></li>
+          <li><a href="http://anion15.github.io/hangang.html" class="text-gray-600 hover:text-blue-600 transition">개발자의 다른 사이트</a></li>
+          <li><a href="/term" class="text-gray-600 hover:text-blue-600 transition"><u><b>개인정보처리방침</b></u></a></li>
+        </ul>
+      </div>
+
+      <!-- SNS -->
+      <div>
+        <h3 class="text-xl font-semibold mb-2">Follow Us</h3>
+        <div class="flex space-x-4">
+          <ul class="space-y-1">
+            <li></li><a href="https://x.com/Sjinside_" class="text-gray-600 hover:text-blue-600 transition">X(트위터)</a>
+            <li></li><a href="https://www.youtube.com/@SjInside-j8q" class="text-gray-600 hover:text-blue-600 transition">유튜브</a>
+            <li><a href="https://discord.gg/bNJvy5weuc" class="text-gray-600 hover:text-blue-600 transition">공식 디스코드</a>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <hr class="my-8 border-gray-200">
+
+    <p class="text-center text-gray-500 text-sm">&copy; 2025 상정인사이드. All rights reserved.</p>
+  </footer>
+</body>
+</html>
