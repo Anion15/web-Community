@@ -769,6 +769,9 @@ Allow:/
 """
     return Response(content, mimetype='text/plain')
 
+@app.route('/term')
+def term():
+    return render_template('term.html')
 
 @app.errorhandler(404)
 def page_not_found(e):
