@@ -22,8 +22,354 @@
     ::-webkit-scrollbar { display: none;}
   </style>
 </head>
+<style>
+    /* 다크 테마 스타일 */
+    .dark-theme {
+      background-color: #1a1a1a;
+      color: #e5e7eb;
+    }
+
+    .dark-theme .settings-content {
+      background: #2d2d2d;
+      color: #e5e7eb;
+    }
+
+    .dark-theme .settings-item {
+      border-bottom-color: #4b5563;
+    }
+
+    .dark-theme .theme-select {
+      background: #374151;
+      color: #e5e7eb;
+      border-color: #4b5563;
+    }
+
+    .dark-theme header {
+      background: #2d2d2d;
+      color: #e5e7eb;
+    }
+
+    .dark-theme .bg-white {
+      background-color: #2d2d2d !important;
+      color: #e5e7eb;
+    }
+
+    .dark-theme #site-footer {
+      background: #2d2d2d;
+      color: #e5e7eb;
+    }
+
+    .dark-theme .text-gray-600 {
+      color: #9ca3af !important;
+    }
+
+    .dark-theme .text-gray-800 {
+      color: #e5e7eb !important;
+    }
+
+    .dark-theme .border {
+      border-color: #4b5563;
+    }
+
+    .dark-theme input, .dark-theme textarea {
+      background: #374151;
+      color: #e5e7eb;
+      border-color: #4b5563;
+    }
+
+    .dark-theme input::placeholder, .dark-theme textarea::placeholder {
+      color: #9ca3af;
+    }
+
+    /* 글 작성 폼 다크 테마 */
+    .dark-theme #post-form {
+      background-color: #2d2d2d !important;
+      color: #e5e7eb;
+    }
+
+    /* 버튼 다크 테마 */
+    .dark-theme #latest-btn,
+    .dark-theme #popular-btn {
+      background-color: #374151;
+      color: #e5e7eb;
+    }
+
+    .dark-theme #latest-btn.active,
+    .dark-theme #popular-btn.active {
+      background-color: #2563eb;
+    }
+
+    /* 통계 텍스트 다크 테마 */
+    .dark-theme #stats-text,
+    .dark-theme #end-text {
+      color: #9ca3af !important;
+    }
+
+    /* 메인 배경 다크 테마 */
+    .dark-theme {
+      background-color: #1a1a1a !important;
+    }
+
+    .dark-theme main {
+      background-color: transparent;
+    }
+
+    /* 다크 테마 로고 필터 */
+    .dark-theme header img {
+      filter: brightness(0) invert(1);
+    }
+
+    /* 후원하기 버튼은 로고 필터에서 제외 */
+    .dark-theme header img {
+      filter: brightness(0) invert(1);
+    }
+
+    .dark-theme header a[href*="buymeacoffee"] img {
+      filter: none !important;
+    }
+
+    .dark-theme #mobile-menu a[href*="buymeacoffee"] img {
+      filter: none !important;
+    }
+
+    /* Footer p 태그 다크 테마 */
+    .dark-theme p {
+      color: #e5e7eb !important;
+    }
+</style>
+<script>
+      // 기본 설정값
+      const defaultSettings = {
+        theme: 'system'
+      };
+
+      // 설정 불러오기
+      function loadSettings() {
+        const saved = localStorage.getItem('sjinside_settings');
+        return saved ? { ...defaultSettings, ...JSON.parse(saved) } : defaultSettings;
+      }
+
+      // 테마 적용 함수
+      function applyTheme(theme) {
+        const body = document.body;
+        body.classList.remove('dark-theme');
+        
+        if (theme === 'dark') {
+          body.classList.add('dark-theme');
+        } else if (theme === 'system') {
+          if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            body.classList.add('dark-theme');
+          }
+        }
+      }
+
+      // 페이지 로드 시 초기 설정
+      document.addEventListener('DOMContentLoaded', function() {
+        const settings = loadSettings();
+        applyTheme(settings.theme);
+        
+        // 시스템 테마 변경 감지
+        if (window.matchMedia) {
+          window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+            if (loadSettings().theme === 'system') {
+              applyTheme('system');
+            }
+          });
+        }
+      });
+</script>
+
 
 <body class="bg-gray-100 min-h-screen">
+  <!--우클릭 이벤트 정의-->
+  <style>
+    @keyframes fadeInSlide {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .list-group {
+      display: flex;
+      flex-direction: column;
+      padding-left: 0;
+      margin-bottom: 0;
+      border-radius: 0.375rem;
+      overflow: hidden;
+    }
+
+    .list-group-item {
+      position: relative;
+      display: block;
+      padding: 0.75rem 1.25rem;
+      background-color: #fff;
+      border: 1px solid rgba(0, 0, 0, 0.125);
+      color: #212529;
+      text-decoration: none;
+      user-select: none;
+      cursor: pointer;
+      transition: background-color 0.15s ease-in-out, transform 0.2s ease;
+    }
+
+    .list-group-item + .list-group-item {
+      border-top: none;
+    }
+
+    .list-group-item:hover {
+      z-index: 1;
+      background-color: #f8f9fa;
+      font-weight: bold;
+      transform: scale(1.01);
+    }
+
+    .list-group-item:active {
+      background-color: #e9ecef;
+    }
+
+    #popMenu {
+      position: absolute;
+      display: none;
+      width: 280px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      border-radius: 0.5rem;
+      z-index: 9999;
+      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.15);
+      overflow: hidden;
+      animation: fadeInSlide 0.3s ease forwards;
+    }
+
+    .dark-theme #popMenu {
+      background: rgba(45, 45, 45, 0.95);
+    }
+
+    .dark-theme .list-group-item {
+      background-color: #374151;
+      color: #e5e7eb;
+      border-color: #4b5563;
+    }
+
+    .dark-theme .list-group-item:hover {
+      background-color: #4b5563;
+    }
+
+    .dark-theme .list-group-item:active {
+      background-color: #6b7280;
+    }
+
+    /* 다크 테마 버튼 구별 - 더 강력한 스타일링 */
+    .dark-theme #latest-btn,
+    .dark-theme #popular-btn {
+      background-color: #374151 !important;
+      color: #9ca3af !important;
+      border: 2px solid #4b5563 !important;
+    }
+
+    .dark-theme #latest-btn.active {
+      background-color: #2563eb !important;
+      color: white !important;
+      border: 2px solid #2563eb !important;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3) !important;
+    }
+
+    .dark-theme #popular-btn.active {
+      background-color: #dc2626 !important;
+      color: white !important;
+      border: 2px solid #dc2626 !important;
+      box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.3) !important;
+    }
+
+    /* 다크 테마 버튼 색상 변경 */
+    .dark-theme .bg-green-500 {
+      background-color: #059669 !important; /* bg-emerald-500 */
+    }
+
+    .dark-theme .bg-red-500 {
+      background-color: #e11d48 !important; /* bg-rose-500 */
+    }
+  </style>
+
+  <div id="popMenu" class="list-group">
+    <div class="list-group-item" data-action="reload">🔄 새로고침</div>
+    <hr style="margin: 0">
+    <a href="/" class="list-group-item list-group-item-action">🏠 홈으로 가기</a>
+    <a href="/info" class="list-group-item list-group-item-action">📘 소개 및 이용규칙</a>
+    <a href="/history" class="list-group-item list-group-item-action">📊 통계 및 정보</a>
+    <a href="https://buymeacoffee.com/sjinside" class="list-group-item list-group-item-action">☕ 후원하기</a>
+  </div>
+
+  <script>
+    const popMenu = document.getElementById('popMenu');
+
+    document.addEventListener('contextmenu', e => {
+      // 우클릭 비활성화 설정 확인
+      const settings = JSON.parse(localStorage.getItem('sjinside_settings') || '{}');
+      if (settings.rightClickEnabled === false) {
+        // 기본 우클릭 메뉴 허용 (preventDefault 호출하지 않음)
+        return;
+      }
+
+      // 커스텀 우클릭 메뉴 표시
+      e.preventDefault();
+
+      popMenu.style.display = 'block';
+      popMenu.style.visibility = 'hidden';
+
+      const menuWidth = popMenu.offsetWidth;
+      const menuHeight = popMenu.offsetHeight;
+
+      let left = e.pageX + 5;
+      let top = e.pageY + 5;
+
+      const maxLeft = window.scrollX + window.innerWidth - menuWidth - 10;
+      const maxTop = window.scrollY + window.innerHeight - menuHeight - 10;
+
+      if (left > maxLeft) left = maxLeft;
+      if (top > maxTop) top = maxTop;
+
+      popMenu.style.left = `${left}px`;
+      popMenu.style.top = `${top}px`;
+
+      popMenu.style.visibility = 'visible';
+      popMenu.style.animation = 'none';
+      void popMenu.offsetHeight;
+      popMenu.style.animation = 'fadeInSlide 0.3s ease forwards';
+    });
+
+    popMenu.addEventListener('click', async e => {
+      const action = e.target.dataset.action;
+      if (!action) return;
+
+      try {
+        if (action === 'reload') {
+          location.reload();
+        } else if (action === 'settings') {
+          openSettingsModal();
+        }
+      } catch (err) {
+        console.error(err);
+        alert('작업을 수행할 수 없습니다. 브라우저 보안 정책 또는 HTTPS 확인 필요.');
+      } finally {
+        popMenu.style.display = 'none';
+      }
+    });
+
+    document.addEventListener('click', e => {
+      if (!popMenu.contains(e.target)) {
+        popMenu.style.display = 'none';
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      popMenu.style.display = 'none';
+    });
+
+    window.addEventListener('scroll', () => {
+      popMenu.style.display = 'none';
+    });
+  </script>
+  <!--우클릭 이벤트 정의 끝-->
+
+
   <header class="bg-white shadow py-4 px-6 mb-6 flex items-center justify-between">
     <!-- 왼쪽: 로고 -->
     <div class="flex items-center space-x-4">
@@ -112,7 +458,7 @@
   <h1>&nbsp;</h1>
 
   <!--새로운 footer-->
-  <footer class="bg-white text-gray-800 py-10 px-5 font-sans border-t border-gray-200">
+  <footer id="site-footer" class="bg-white text-gray-800 py-10 px-5 font-sans border-t border-gray-200" style="z-index: 999;">
     <div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
       <!-- 소개 -->
       <div>
@@ -129,6 +475,7 @@
           <li><a href="/release-notes" class="text-gray-600 hover:text-blue-600 transition">릴리즈 노트</a></li>
           <li><a href="https://github.com/anion15" class="text-gray-600 hover:text-blue-600 transition">개발자의 깃허브</a></li>
           <li><a href="http://anion15.github.io/hangang.html" class="text-gray-600 hover:text-blue-600 transition">개발자의 다른 사이트</a></li>
+          <li><a href="/term" class="text-gray-600 hover:text-blue-600 transition"><u><b>개인정보처리방침</b></u></a></li>
         </ul>
       </div>
 
@@ -136,8 +483,11 @@
       <div>
         <h3 class="text-xl font-semibold mb-2">Follow Us</h3>
         <div class="flex space-x-4">
-          <a href="https://x.com/Sjinside_" class="text-gray-600 hover:text-blue-600 transition">X(트위터)</a>
-          <a href="https://www.youtube.com/@SjInside-j8q" class="text-gray-600 hover:text-blue-600 transition">유튜브</a>
+          <ul class="space-y-1">
+            <li></li><a href="https://x.com/Sjinside_" class="text-gray-600 hover:text-blue-600 transition">X(트위터)</a>
+            <li></li><a href="https://www.youtube.com/@SjInside-j8q" class="text-gray-600 hover:text-blue-600 transition">유튜브</a>
+            <li><a href="https://discord.gg/bNJvy5weuc" class="text-gray-600 hover:text-blue-600 transition">공식 디스코드</a>
+          </ul>
         </div>
       </div>
     </div>
