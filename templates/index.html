@@ -161,14 +161,14 @@
   </style>
 
   <script>
-    // 쿠키 동의 상태 확인
+    // 쿠키 동의 상태 확인 (sessionStorage → localStorage 변경)
     function getCookieConsent() {
-      return sessionStorage.getItem('cookieConsent');
+      return localStorage.getItem('cookieConsent');
     }
 
-    // 쿠키 동의 상태 저장
+    // 쿠키 동의 상태 저장 (sessionStorage → localStorage 변경)
     function setCookieConsent(status) {
-      sessionStorage.setItem('cookieConsent', status);
+      localStorage.setItem('cookieConsent', status);
     }
 
     // 쿠키 배너 표시 함수
@@ -225,29 +225,19 @@
       }
     }
 
-    // 동의 버튼 클릭 이벤트
-    function setupEventListeners() {
-      const acceptBtn = document.getElementById('acceptCookies');
-      
-      if (acceptBtn) {
-        acceptBtn.addEventListener('click', function() {
-          setCookieConsent('accepted');
-          hideBanner();
-          console.log('쿠키 사용에 동의했습니다.');
-        });
-      }
-    }
 
 
-    // DOM 로드 완료 후 초기화 (기존 코드 수정)
     document.addEventListener('DOMContentLoaded', function() {
       console.log('DOM 로드 완료');
       initializeCookieBanner();
       setupEventListeners();
-      setupDiscordEventListeners();  // 추가
+      
+      // 디스코드 관련 함수가 있는 경우에만 호출 (안전 체크 추가)
+      if (typeof setupDiscordEventListeners === 'function') {
+        setupDiscordEventListeners();
+      }
     });
 
-    // 쿠키 동의 버튼 이벤트 수정
     function setupEventListeners() {
       const acceptBtn = document.getElementById('acceptCookies');
       
@@ -257,8 +247,10 @@
           hideBanner();
           console.log('쿠키 사용에 동의했습니다.');
           
-          // 쿠키 동의 후 디스코드 알림 확인
-          initializeDiscordNotification();  // 추가
+          // 쿠키 동의 후 디스코드 알림 확인 (함수 존재 여부 확인 추가)
+          if (typeof initializeDiscordNotification === 'function') {
+            initializeDiscordNotification();
+          }
         });
       }
     }
