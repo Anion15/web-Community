@@ -19,22 +19,301 @@
   <script type="text/javascript" src="//t1.daumcdn.net/kas/static/ba.min.js" async></script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 쿠키 배너 스타일 -->
   <style>
-    body { font-family: 'Noto Sans KR', sans-serif; overflow-x: hidden; -ms-overflow-style: none; }
+    body { 
+      font-family: 'Noto Sans KR', sans-serif; 
+      overflow-x: hidden; 
+    }
+    
+    /* 블러 오버레이 스타일 */
+    .blur-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(5px);
+      z-index: 9998;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+    }
+
+    .blur-overlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* 쿠키 배너 스타일 */
+    #cookieBanner {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background-color: white;
+      border-top: 2px solid #3b82f6;
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+      z-index: 9999;
+      transform: translateY(100%);
+      transition: transform 0.3s ease-in-out;
+    }
+
+    #cookieBanner.show {
+      transform: translateY(0);
+    }
+
+    /* 다크 테마 적용 */
+    .dark-theme #cookieBanner {
+      background-color: #2d2d2d;
+      color: #e5e7eb;
+    }
+
+    .dark-theme #cookieBanner .text-gray-800 {
+      color: #e5e7eb !important;
+    }
+
+    .dark-theme #cookieBanner .text-gray-600 {
+      color: #9ca3af !important;
+    }
+
+    .dark-theme #cookieBanner .text-gray-500 {
+      color: #6b7280 !important;
+    }
+
+    .dark-theme .blur-overlay {
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    /* 테스트를 위한 더미 콘텐츠 스타일 */
+    .test-content {
+      padding: 2rem;
+      line-height: 1.6;
+    }
+
+    .test-card {
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1rem 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .dark-theme .test-card {
+      background: #2d2d2d;
+      color: #e5e7eb;
+    }
+
+    .dark-theme {
+      background-color: #1a1a1a;
+      color: #e5e7eb;
+    }
+
+    /* 설정 버튼 스타일 */
+    .settings-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      cursor: pointer;
+      z-index: 10000;
+    }
+
+    .settings-btn:hover {
+      background: #2563eb;
+    }
+
+    .dark-theme .settings-btn {
+      background: #374151;
+    }
+
+    .dark-theme .settings-btn:hover {
+      background: #4b5563;
+    }
+  </style>
+
+  <script>
+    // 쿠키 동의 상태 확인
+    function getCookieConsent() {
+      return sessionStorage.getItem('cookieConsent');
+    }
+
+    // 쿠키 동의 상태 저장
+    function setCookieConsent(status) {
+      sessionStorage.setItem('cookieConsent', status);
+    }
+
+    // 쿠키 배너 표시 함수
+    function showBanner() {
+      const banner = document.getElementById('cookieBanner');
+      const overlay = document.getElementById('blurOverlay');
+      
+      if (banner && overlay) {
+        banner.style.display = 'block';
+        overlay.style.display = 'block';
+        document.body.style.overflow = 'hidden'; // 스크롤 방지
+        
+        // 약간의 지연 후 애니메이션 시작
+        setTimeout(() => {
+          banner.classList.add('show');
+          overlay.classList.add('show');
+        }, 10);
+      }
+    }
+
+    // 쿠키 배너 숨기기 함수
+    function hideBanner() {
+      const banner = document.getElementById('cookieBanner');
+      const overlay = document.getElementById('blurOverlay');
+      
+      if (banner && overlay) {
+        banner.classList.remove('show');
+        overlay.classList.remove('show');
+        document.body.style.overflow = ''; // 스크롤 복원
+        
+        setTimeout(() => {
+          banner.style.display = 'none';
+          overlay.style.display = 'none';
+        }, 300);
+      }
+    }
+
+    // 페이지 로드 시 배너 표시 여부 결정
+    function initializeCookieBanner() {
+      const consentStatus = getCookieConsent();
+      
+      console.log('초기화 - 쿠키 동의 상태:', consentStatus);
+      
+      // 동의 상태가 없는 경우에만 배너 표시
+      if (!consentStatus) {
+        console.log('쿠키 동의 없음 - 배너 표시');
+        showBanner();
+      } else {
+        console.log('쿠키 동의 있음 - 배너 숨김');
+        const banner = document.getElementById('cookieBanner');
+        const overlay = document.getElementById('blurOverlay');
+        if (banner) banner.style.display = 'none';
+        if (overlay) overlay.style.display = 'none';
+      }
+    }
+
+    // 동의 버튼 클릭 이벤트
+    function setupEventListeners() {
+      const acceptBtn = document.getElementById('acceptCookies');
+      
+      if (acceptBtn) {
+        acceptBtn.addEventListener('click', function() {
+          setCookieConsent('accepted');
+          hideBanner();
+          console.log('쿠키 사용에 동의했습니다.');
+        });
+      }
+    }
+
+
+    // DOM 로드 완료 후 초기화
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOM 로드 완료');
+      initializeCookieBanner();
+      setupEventListeners();
+    });
+
+    // 페이지 로드 완료 후에도 한 번 더 확인
+    window.addEventListener('load', function() {
+      console.log('페이지 로드 완료');
+      setTimeout(() => {
+        if (!document.getElementById('cookieBanner')) {
+          console.error('페이지 로드 후에도 쿠키 배너 요소가 없습니다.');
+        }
+      }, 100);
+    });
+  </script>
+
+
+
+  <style>
+    /* 수정 */
+    body {
+        font-family: 'Noto Sans KR', sans-serif; 
+        overflow-x: hidden; 
+        -ms-overflow-style: none;
+        width: 100vw !important;  /* 뷰포트 너비로 고정 */
+        max-width: 100vw !important;
+        box-sizing: border-box !important;
+    }
     ::-webkit-scrollbar { display: none;}
-    @media (max-width: 511px) {body {width: 125%;}} 
+    /* @media (max-width: 511px) {body {width: 125%;}} 
     @media (max-width: 410px) {body {width: 150%;}}
     @media (max-width: 342px) {body {width: 175%;}}
-    @media (max-width: 292px) {body {width: 200%;}}
+    @media (max-width: 292px) {body {width: 200%;}} */
 
+    /* 기존 미디어 쿼리 완전 삭제 */
+    /* @media (max-width: 511px) {body {width: 125%;}} 등 모두 삭제 */
+
+    /* 메인 콘텐츠 영역 반응형 설정 */
+    main, .content-area {
+        width: 100%;
+        max-width: 100vw;
+        margin: 0 auto;
+        padding: 0 16px;
+        box-sizing: border-box;
+    }
+
+    /* 광고가 숨겨질 때 콘텐츠 영역 조정 */
     @media (max-width: 1090px) {
-      .floating-ad {
-        display: none !important;
-      }
-      body {
-        width: 100% !important;
-        overflow-x: hidden !important;
-      }
+        .floating-ad {
+            display: none !important;
+        }
+        
+        /* 콘텐츠 영역을 전체 너비로 확장 */
+        main, .content-area, .container {
+            width: 100% !important;
+            max-width: 100vw !important;
+            margin: 0 auto !important;
+            padding: 0 16px !important;
+        }
+        
+        /* 글 작성 폼과 게시물 목록 조정 */
+        #post-form, .post-list, .post-item {
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+        }
+    }
+
+    /* 모바일 전용 최적화 */
+    @media (max-width: 767px) {
+        body {
+            width: 100vw !important;
+            max-width: 100vw !important;
+            overflow-x: hidden !important;
+        }
+        
+        main, .content-area, .container {
+            padding: 0 12px !important;
+        }
+        
+        /* 입력 필드들 모바일 최적화 */
+        input[type="text"], 
+        input[type="email"], 
+        textarea {
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            font-size: 16px; /* iOS 줌 방지 */
+        }
+        
+        /* 버튼들 모바일 최적화 */
+        .btn, button {
+            min-height: 44px;
+            padding: 12px 16px;
+            box-sizing: border-box;
+        }
     }
 
     .floating-ad {
@@ -465,6 +744,41 @@
   </style>
 </head>
 <body class="flex flex-col min-h-screen bg-gray-100">
+  <!-- 블러 오버레이 (별도 요소) -->
+  <div id="blurOverlay" class="blur-overlay"></div>
+
+  <!-- 쿠키 동의 배너 -->
+  <div id="cookieBanner" class="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-blue-500 shadow-lg z-50">
+    <div class="container mx-auto px-4 py-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="flex-1">
+          <div class="flex items-center mb-2">
+            <svg class="w-5 h-5 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+            </svg>
+            <h3 class="text-lg font-semibold text-gray-800">쿠키 사용 안내</h3>
+          </div>
+          <p class="text-gray-600 text-sm leading-relaxed">
+            저희 웹사이트는 광고 서비스 제공을 위해 쿠키를 사용합니다. 
+            더 나은 서비스 제공과 맞춤형 광고를 위해 쿠키 사용에 동의해 주세요.
+          </p>
+          <div class="mt-2">
+            <a href="/term" class="text-blue-600 hover:text-blue-800 text-sm underline hover:no-underline transition-colors">
+              개인정보처리방침 보기
+            </a>
+          </div>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <button 
+            id="acceptCookies" 
+            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            동의합니다
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
     <!--우클릭 이벤트 정의-->
     <style>
       @keyframes fadeInSlide {
