@@ -239,12 +239,29 @@
     }
 
 
-    // DOM 로드 완료 후 초기화
+    // DOM 로드 완료 후 초기화 (기존 코드 수정)
     document.addEventListener('DOMContentLoaded', function() {
       console.log('DOM 로드 완료');
       initializeCookieBanner();
       setupEventListeners();
+      setupDiscordEventListeners();  // 추가
     });
+
+    // 쿠키 동의 버튼 이벤트 수정
+    function setupEventListeners() {
+      const acceptBtn = document.getElementById('acceptCookies');
+      
+      if (acceptBtn) {
+        acceptBtn.addEventListener('click', function() {
+          setCookieConsent('accepted');
+          hideBanner();
+          console.log('쿠키 사용에 동의했습니다.');
+          
+          // 쿠키 동의 후 디스코드 알림 확인
+          initializeDiscordNotification();  // 추가
+        });
+      }
+    }
 
     // 페이지 로드 완료 후에도 한 번 더 확인
     window.addEventListener('load', function() {
@@ -764,7 +781,295 @@
       z-index: 1;
     }
 
+    /* 디스코드 알림 모달 스타일 */
+    .discord-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(8px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .discord-modal.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .discord-content {
+      background: linear-gradient(135deg, #5865F2 0%, #7289DA 100%);
+      color: white;
+      border-radius: 16px;
+      padding: 2rem;
+      max-width: 480px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      transform: scale(0.9) translateY(20px);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .discord-modal.show .discord-content {
+      transform: scale(1) translateY(0);
+    }
+
+    .discord-content::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+      border-radius: 16px;
+    }
+
+    .discord-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 1rem;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .discord-title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .discord-subtitle {
+      font-size: 1rem;
+      opacity: 0.9;
+      margin-bottom: 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .discord-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .discord-btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.9rem;
+    }
+
+    .discord-btn-primary {
+      background: white;
+      color: #5865F2;
+    }
+
+    .discord-btn-primary:hover {
+      background: #f8f9fa;
+      transform: translateY(-2px);
+    }
+
+    .discord-btn-secondary {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .discord-btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .discord-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      width: 32px;
+      height: 32px;
+      min-width: 32px;  /* 추가 */
+      min-height: 32px; /* 추가 */
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      z-index: 2;
+      font-size: 18px;  /* 추가 */
+      font-weight: bold; /* 추가 */
+      line-height: 1;    /* 추가 */
+      flex-shrink: 0;    /* 추가 */
+    }
+
+    .discord-close:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* 다크 테마 지원 */
+    .dark-theme .discord-content {
+      background: linear-gradient(135deg, #4752C4 0%, #5865F2 100%);
+    }
+
+    /* 모바일 반응형 */
+    @media (max-width: 480px) {
+      .discord-content {
+        padding: 1.5rem;
+        margin: 1rem;
+      }
+      
+      .discord-actions {
+        flex-direction: column;
+      }
+      
+      .discord-btn {
+        width: 100%;
+      }
+      
+      /* X 버튼 모바일 최적화 추가 */
+      .discord-close {
+        top: 0.75rem;
+        right: 0.75rem;
+        width: 28px;
+        height: 28px;
+        min-width: 28px;
+        min-height: 28px;
+        font-size: 16px;
+      }
+    }
+    
+    @media (max-width: 360px) {
+      .discord-close {
+        top: 0.5rem;
+        right: 0.5rem;
+        width: 24px;
+        height: 24px;
+        min-width: 24px;
+        min-height: 24px;
+        font-size: 14px;
+      }
+    }
   </style>
+  <script>
+    // 디스코드 알림 상태 확인
+    function getDiscordNotificationShown() {
+      return localStorage.getItem('discordNotificationShown');
+    }
+
+    // 디스코드 알림 상태 저장
+    function setDiscordNotificationShown() {
+      localStorage.setItem('discordNotificationShown', 'true');
+    }
+
+    // 디스코드 모달 표시
+    function showDiscordModal() {
+      const modal = document.getElementById('discordModal');
+      if (modal) {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        
+        setTimeout(() => {
+          modal.classList.add('show');
+        }, 10);
+      }
+    }
+
+    // 디스코드 모달 숨기기
+    function hideDiscordModal() {
+      const modal = document.getElementById('discordModal');
+      if (modal) {
+        modal.classList.remove('show');
+        document.body.style.overflow = '';
+        
+        setTimeout(() => {
+          modal.style.display = 'none';
+        }, 300);
+      }
+    }
+
+    // 디스코드 알림 초기화
+    function initializeDiscordNotification() {
+      const notificationShown = getDiscordNotificationShown();
+      
+      // 첫 방문자에게만 표시 (쿠키 동의 후 표시)
+      if (!notificationShown) {
+        // 쿠키 동의 후 3초 뒤에 표시
+        setTimeout(() => {
+          const cookieConsent = getCookieConsent();
+          if (cookieConsent === 'accepted') {
+            showDiscordModal();
+          }
+        }, 3000);
+      }
+    }
+
+    // 디스코드 모달 이벤트 리스너 설정
+    function setupDiscordEventListeners() {
+      const joinBtn = document.getElementById('joinDiscord');
+      const laterBtn = document.getElementById('laterDiscord');
+      const closeBtn = document.getElementById('closeDiscord');
+      
+      if (joinBtn) {
+        joinBtn.addEventListener('click', function() {
+          setDiscordNotificationShown();
+          hideDiscordModal();
+          // 디스코드 서버 링크로 이동 (실제 링크로 변경하세요)
+          window.open('https://discord.gg/bNJvy5weuc', '_blank');
+        });
+      }
+      
+      if (laterBtn) {
+        laterBtn.addEventListener('click', function() {
+          setDiscordNotificationShown();
+          hideDiscordModal();
+        });
+      }
+      
+      if (closeBtn) {
+        closeBtn.addEventListener('click', function() {
+          setDiscordNotificationShown();
+          hideDiscordModal();
+        });
+      }
+      
+      // 모달 외부 클릭 시 닫기
+      const modal = document.getElementById('discordModal');
+      if (modal) {
+        modal.addEventListener('click', function(e) {
+          if (e.target === modal) {
+            setDiscordNotificationShown();
+            hideDiscordModal();
+          }
+        });
+      }
+    }
+  </script>
+
 </head>
 <body class="flex flex-col min-h-screen bg-gray-100">
   <!-- 블러 오버레이 (별도 요소) -->
@@ -799,6 +1104,30 @@
             동의합니다
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+  <!-- 디스코드 가입 알림 모달 -->
+  <div id="discordModal" class="discord-modal">
+    <div class="discord-content">
+      <button id="closeDiscord" class="discord-close">×</button>
+      
+      <div class="discord-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
+        </svg>
+      </div>
+      
+      <div class="discord-title">상정인사이드 공식 디스코드에 가입하세요!</div>
+      <div class="discord-subtitle">업데이트 및 다양한 최신 정보를 손쉽게 확인하세요!</div>
+      
+      <div class="discord-actions">
+        <button id="joinDiscord" class="discord-btn discord-btn-primary">
+          지금 가입하기
+        </button>
+        <button id="laterDiscord" class="discord-btn discord-btn-secondary">
+          나중에 하기
+        </button>
       </div>
     </div>
   </div>
