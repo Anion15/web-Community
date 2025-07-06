@@ -60,6 +60,29 @@
       transition: transform 0.3s ease-in-out;
     }
 
+    .cookie-content {
+      padding: 20px 24px;  /* 충분한 패딩 추가 */
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .cookie-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;  /* 제목과 본문 사이 간격 */
+    }
+    .cookie-text {
+      margin: 0 0 16px 0;  /* 본문과 버튼 사이 간격 */
+      line-height: 1.5;    /* 텍스트 줄 간격 */
+    }
+    .cookie-actions {
+      display: flex;
+      gap: 12px;          /* 버튼들 사이 간격 */
+      justify-content: flex-end;
+    }
+    .cookie-icon {
+      margin-right: 8px;  /* 아이콘과 제목 사이 간격 */
+    }
+
     #cookieBanner.show {
       transform: translateY(0);
     }
@@ -762,7 +785,7 @@
             저희 웹사이트는 광고 서비스 제공을 위해 쿠키를 사용합니다. 
             더 나은 서비스 제공과 맞춤형 광고를 위해 쿠키 사용에 동의해 주세요.
           </p>
-          <div class="mt-2">
+          <div class="mt-1">
             <a href="/term" class="text-blue-600 hover:text-blue-800 text-sm underline hover:no-underline transition-colors">
               개인정보처리방침 보기
             </a>
