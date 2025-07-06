@@ -470,6 +470,7 @@ def check_abuse(func):
     return wrapper
 
 # Routes
+# ip 밴 추가할 예정
 @app.route('/')
 @check_abuse
 def index():
