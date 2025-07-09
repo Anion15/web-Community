@@ -216,11 +216,16 @@ vpn_list = []
 passed_list = []  # 통과한 IP 목록도 추가
 
 def is_valid_ipv4(ip):
-    try:
-        ip_obj = ipaddress.ip_address(ip)
-        return ip_obj.version == 4
-    except ValueError:
-        return False
+    # try:
+    #     ip_obj = ipaddress.ip_address(ip)
+    #     # IPv4 또는 IPv4-mapped IPv6인지 확인
+    #     if ip_obj.version == 4:
+    #         return True
+    #     if ip_obj.version == 6 and ip_obj.ipv4_mapped:
+    #         return True
+    #     return False
+    # except ValueError:
+        return True
 
 def is_vpn(ip):
     # IPv4가 아닌 경우 차단
@@ -470,7 +475,6 @@ def check_abuse(func):
     return wrapper
 
 # Routes
-# ip 밴 추가할 예정
 @app.route('/')
 @check_abuse
 def index():
@@ -527,55 +531,55 @@ def index():
         return response
 
 
-@app.route('/new')
-@check_abuse
-def newindex():
-    ip = get_real_ip()
-    vpn_used = is_vpn(ip)
-    if vpn_used:
-        log_activity("VPN 사용 감지", "403")
-        return render_template_string("""
-            <!DOCTYPE html>
-            <html lang="ko">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>VPN 감지됨</title>
-            </head>
-            <body>
-                <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background-color: #f8f9fa; color: #333; font-family: Arial, sans-serif;">
-                    <h1 style="font-size: 72px; margin-bottom: 0; text-align: center;">VPN 감지됨</h1>
-                    <p style="font-size: 18px; margin-top: 10px;">VPN 또는 프록시가 활성화되어 있습니다.</p>
-                    <p style="font-size: 18px;">사이트 이용을 위해 VPN을 해제해 주세요.</p>
-                </div>
-            </body>
-            </html>
-        """)
-    else:
-        valid, message = is_valid_client()
-        if valid == 10:
-            return render_template_string("""
-                <!DOCTYPE html>
-                <html lang="ko">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>허용되지 않는 브라우저입니다.</title>
-                </head>
-                <body>
-                    <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background-color: #f8f9fa; color: #333; font-family: Arial, sans-serif;">
-                        <h1 style="font-size: 72px; margin-bottom: 0; text-align: center;">허용되지 않는 브라우저입니다.</h1>
-                        <p style="font-size: 18px; margin-top: 10px;">크롬, 엣지, 사파리로 접속해 주세요.</p>
-                    </div>
-                </body>
-                </html>
-            """, message=message), 400
-        elif not valid:
-            # 기타 잘못된 요청 (Referer, User-Agent 누락 등)
-            return message, 400
-        session_client_id = get_session_client_id()
-        log_activity("사용자 /new 접속", "200")
-        return render_template('index.html', client_id=session_client_id)
+# @app.route('/new')
+# @check_abuse
+# def newindex():
+#     ip = get_real_ip()
+#     vpn_used = is_vpn(ip)
+#     if vpn_used:
+#         log_activity("VPN 사용 감지", "403")
+#         return render_template_string("""
+#             <!DOCTYPE html>
+#             <html lang="ko">
+#             <head>
+#                 <meta charset="UTF-8">
+#                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+#                 <title>VPN 감지됨</title>
+#             </head>
+#             <body>
+#                 <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background-color: #f8f9fa; color: #333; font-family: Arial, sans-serif;">
+#                     <h1 style="font-size: 72px; margin-bottom: 0; text-align: center;">VPN 감지됨</h1>
+#                     <p style="font-size: 18px; margin-top: 10px;">VPN 또는 프록시가 활성화되어 있습니다.</p>
+#                     <p style="font-size: 18px;">사이트 이용을 위해 VPN을 해제해 주세요.</p>
+#                 </div>
+#             </body>
+#             </html>
+#         """)
+#     else:
+#         valid, message = is_valid_client()
+#         if valid == 10:
+#             return render_template_string("""
+#                 <!DOCTYPE html>
+#                 <html lang="ko">
+#                 <head>
+#                     <meta charset="UTF-8">
+#                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+#                     <title>허용되지 않는 브라우저입니다.</title>
+#                 </head>
+#                 <body>
+#                     <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background-color: #f8f9fa; color: #333; font-family: Arial, sans-serif;">
+#                         <h1 style="font-size: 72px; margin-bottom: 0; text-align: center;">허용되지 않는 브라우저입니다.</h1>
+#                         <p style="font-size: 18px; margin-top: 10px;">크롬, 엣지, 사파리로 접속해 주세요.</p>
+#                     </div>
+#                 </body>
+#                 </html>
+#             """, message=message), 400
+#         elif not valid:
+#             # 기타 잘못된 요청 (Referer, User-Agent 누락 등)
+#             return message, 400
+#         session_client_id = get_session_client_id()
+#         log_activity("사용자 /new 접속", "200")
+#         return render_template('index.html', client_id=session_client_id)
 
 @app.route('/info')
 def info():
@@ -602,7 +606,11 @@ def info():
         return message, 400
     session_client_id = get_session_client_id()
     log_activity("사용자 /info 접속", "200")
-    return render_template('info.html', client_id=session_client_id)
+    html = render_template('info.html', client_id=session_client_id)
+
+    response = make_response(html)
+    response.headers['Cache-Control'] = 'public, max-age=60'  # 60초 캐시
+    return response
 
 @app.route('/history')
 @check_abuse
@@ -630,7 +638,11 @@ def history():
         return message, 400
     session_client_id = get_session_client_id()
     log_activity("사용자 /history 접속", "200")
-    return render_template('history.html', client_id=session_client_id)
+    html = render_template('history.html', client_id=session_client_id)
+
+    response = make_response(html)
+    response.headers['Cache-Control'] = 'public, max-age=60'  # 60초 캐시
+    return response
 
 @app.route('/release-notes')
 @check_abuse
@@ -657,7 +669,11 @@ def release_notes():
         # 기타 잘못된 요청 (Referer, User-Agent 누락 등)
         return message, 400
     session_client_id = get_session_client_id()
-    return render_template('release-notes.html', client_id=session_client_id)
+    html = render_template('release-notes.html', client_id=session_client_id)
+
+    response = make_response(html)
+    response.headers['Cache-Control'] = 'public, max-age=60'  # 60초 캐시
+    return response
 
 @app.route('/sitemap.xml')
 @check_abuse
@@ -773,6 +789,10 @@ Allow:/
 @app.route('/term')
 def term():
     return render_template('term.html')
+
+@app.route('/service-terms')
+def serviceterms():
+    return render_template('service-terms.html')
 
 @app.errorhandler(404)
 def page_not_found(e):
