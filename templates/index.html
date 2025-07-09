@@ -1100,38 +1100,39 @@
   <!-- 블러 오버레이 (별도 요소) -->
   <div id="blurOverlay" class="blur-overlay"></div>
 
-  <!-- 쿠키 동의 배너 -->
-  <div id="cookieBanner" class="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-blue-500 shadow-lg z-50">
-    <div class="container mx-auto px-4 py-4 sm:px-6 lg:px-8">
-      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+  <!-- 넉넉한 여백과 라인 간격 추가된 서비스/쿠키 안내 배너 -->
+  <div id="cookieBanner" class="fixed bottom-0 left-0 right-0 bg-gray-900 text-white border-t border-blue-500 shadow-xl z-50">
+    <div class="max-w-5xl mx-auto px-6 py-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div class="flex-1">
-          <div class="flex items-center mb-2">
-            <svg class="w-5 h-5 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+          <div class="flex items-center mb-3">
+            <svg class="w-6 h-6 text-blue-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
             </svg>
-            <h3 class="text-lg font-semibold text-gray-800">쿠키 사용 안내</h3>
+            <h3 class="text-lg sm:text-xl font-semibold">서비스 이용 및 개인정보 보호 안내</h3>
           </div>
-          <p class="text-gray-600 text-sm leading-relaxed">
-            저희 웹사이트는 광고 서비스 제공을 위해 쿠키를 사용합니다. 
-            더 나은 서비스 제공과 맞춤형 광고를 위해 쿠키 사용에 동의해 주세요.
+          <p class="text-sm sm:text-base leading-relaxed text-gray-300">
+            본 사이트를 이용함으로써 
+            <a href="/service-terms" class="text-blue-400 underline hover:text-blue-200 transition">서비스 이용약관</a> 및 
+            <a href="/term" class="text-blue-400 underline hover:text-blue-200 transition">개인정보처리방침</a>에 동의하는 것으로 간주됩니다. 
+            더 나은 사용자 경험 제공을 위해 일부 쿠키가 사용됩니다.
           </p>
-          <div class="mt-1">
-            <a href="/term" class="text-blue-600 hover:text-blue-800 text-sm underline hover:no-underline transition-colors">
-              개인정보처리방침 보기
-            </a>
-          </div>
+          <p class="text-xs text-gray-500 mt-2">
+            이 메시지를 임의로 건너뛰더라도 웹사이트에 접근한 즉시 동의로 간주합니다.
+          </p>
         </div>
-        <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+        <div class="flex-shrink-0">
           <button 
-            id="acceptCookies" 
-            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            id="acceptCookies"
+            class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
-            동의합니다
+            확인
           </button>
         </div>
       </div>
     </div>
   </div>
+  
   <!-- 디스코드 가입 알림 모달 -->
   <div id="discordModal" class="discord-modal">
     <div class="discord-content">
@@ -1794,6 +1795,7 @@
           <li><a href="https://github.com/anion15" class="text-gray-600 hover:text-blue-600 transition">개발자의 깃허브</a></li>
           <li><a href="http://anion15.github.io/hangang.html" class="text-gray-600 hover:text-blue-600 transition">개발자의 다른 사이트</a></li>
           <li><a href="/term" class="text-gray-600 hover:text-blue-600 transition"><u><b>개인정보처리방침</b></u></a></li>
+          <li><a href="/service-terms" class="text-gray-600 hover:text-blue-600 transition"><u><b>서비스 이용약관</b></u></a></li>
         </ul>
       </div>
 
