@@ -2414,10 +2414,20 @@
   }
 
   function detectAndHighlightLinks() {
+      // iOS 감지 (iPadOS 13 이상 포함)
+      const isIOS = (() => {
+          const ua = navigator.userAgent || navigator.vendor || window.opera;
+          return /iPad|iPhone|iPod/.test(ua) || 
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      })();
+
       const urlPattern = /\b((https?|ftp):\/\/[^\s<>"']+|www\.[^\s<>"']+)/gi;
       const elements = document.querySelectorAll('.text-gray-700');
 
       elements.forEach(element => {
+          // iOS에서는 개별 요소도 무시
+          if (isIOS) return;
+
           let html = element.innerHTML;
 
           if (html.includes('detected-link')) return;
@@ -2425,47 +2435,35 @@
           html = html.replace(urlPattern, (match) => {
               let url = match;
 
-              // 태그문자 포함 시 제외
-              if (/[<>"'`]/.test(url)) {
-                  return match;
-              }
+              // 태그 문자 포함 시 제외
+              if (/[<>"'`]/.test(url)) return match;
 
-              // 위험 스킴 차단
-              if (/^(javascript|vbscript|data):/i.test(url)) {
-                  return match;
-              }
+              // 위험한 스킴 제외
+              if (/^(javascript|vbscript|data):/i.test(url)) return match;
 
               // www. 시작 시 https:// 붙이기
               if (!/^https?:\/\//i.test(url) && url.startsWith('www.')) {
                   url = 'https://' + url;
               }
 
-              // URL 객체 생성 시 오류나면 제외
+              // 유효하지 않은 URL은 무시
               try {
                   const testUrl = new URL(url);
-
-                  // 추가로 허용할 프로토콜만 필터링 (https, http, ftp)
-                  if (!['http:', 'https:', 'ftp:'].includes(testUrl.protocol)) {
-                      return match;
-                  }
-
-                  // URL 내부에 <, >, ", ' 없으면 통과
-                  if (/[<>"'`]/.test(testUrl.href)) {
-                      return match;
-                  }
-
+                  if (!['http:', 'https:', 'ftp:'].includes(testUrl.protocol)) return match;
+                  if (/[<>"'`]/.test(testUrl.href)) return match;
               } catch (e) {
-                  // 유효하지 않은 URL이면 링크 처리 안 함
                   return match;
               }
 
-              // 안전한 경우만 링크 처리
+              // 안전한 경우에만 링크 처리
               return `<span class="detected-link" onclick="openDetectedLink('${url}', event)">${match}</span>`;
           });
 
           element.innerHTML = html;
       });
   }
+
+
 
 
   
