@@ -19,6 +19,175 @@
   <script type="text/javascript" src="//t1.daumcdn.net/kas/static/ba.min.js" async></script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- SweetAlert2 라이브러리 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- 모든 기본 팝업 오버라이드 -->
+  <script>
+    // 현재 테마 확인 함수
+    function getCurrentTheme() {
+      return document.body.classList.contains('dark-theme') ? 'dark' : 'light';
+    }
+
+    // 테마에 따른 공통 옵션 설정
+    function getBaseOptions() {
+      const isDark = getCurrentTheme() === 'dark';
+      return {
+        customClass: {
+          popup: isDark ? 'rounded-popup styled-popup dark-popup' : 'rounded-popup styled-popup light-popup',
+          title: isDark ? 'styled-title dark-title' : 'styled-title light-title',
+          htmlContainer: isDark ? 'styled-text dark-text' : 'styled-text light-text',
+          confirmButton: isDark ? 'dark-button' : 'light-button',
+          cancelButton: isDark ? 'dark-button' : 'light-button'
+        }
+      };
+    }
+
+    // alert
+    window.alert = function (msg) {
+      Swal.fire({
+        ...getBaseOptions(),
+        icon: 'info',
+        title: '알림',
+        text: msg,
+        confirmButtonText: '확인'
+      });
+    };
+
+    // confirm
+    window.confirm = function (msg) {
+      return Swal.fire({
+        ...getBaseOptions(),
+        icon: 'question',
+        title: '확인',
+        text: msg,
+        showCancelButton: true,
+        confirmButtonText: '예',
+        cancelButtonText: '아니오'
+      }).then(result => result.isConfirmed);
+    };
+
+    // 커스텀 Swal 함수 (더 많은 옵션 제공)
+    window.customSwal = function(options) {
+      return Swal.fire({
+        ...getBaseOptions(),
+        ...options
+      });
+    };
+  </script>
+
+  <!-- 커스텀 스타일 -->
+  <style>
+    /* 팝업 둥글게 + 최상위로 올리기 */
+    .rounded-popup {
+      border-radius: 30px !important;
+    }
+
+    /* SweetAlert2 팝업 z-index 올리기 */
+    .swal2-container {
+      z-index: 9999999 !important;
+    }
+
+    .swal2-popup {
+      z-index: 99999999 !important;
+    }
+    
+    /* 라이트 테마 스타일 */
+    .light-popup {
+      background: #ffffff !important;
+      color: #111827 !important;
+      border: 1px solid #d1d5db !important;
+    }
+
+    .light-title {
+      color: #111827 !important;
+    }
+
+    .light-text {
+      color: #374151 !important;
+    }
+
+    .light-button {
+      background: #3b82f6 !important;
+      color: #ffffff !important;
+      border: none !important;
+    }
+
+    .light-button:hover {
+      background: #2563eb !important;
+    }
+
+    /* 다크 테마 스타일 */
+    .dark-popup {
+      background: #2d2d2d !important;
+      color: #e5e7eb !important;
+      border: 1px solid #4b5563 !important;
+    }
+
+    .dark-title {
+      color: #f3f4f6 !important;
+    }
+
+    .dark-text {
+      color: #d1d5db !important;
+    }
+
+    .dark-button {
+      background: #4f46e5 !important;
+      color: #ffffff !important;
+      border: none !important;
+    }
+
+    .dark-button:hover {
+      background: #4338ca !important;
+    }
+
+    /* 아이콘 색상 조정 */
+    .dark-popup .swal2-icon {
+      border-color: #6b7280 !important;
+    }
+
+    .dark-popup .swal2-icon.swal2-info {
+      border-color: #3b82f6 !important;
+      color: #3b82f6 !important;
+    }
+
+    .dark-popup .swal2-icon.swal2-question {
+      border-color: #10b981 !important;
+      color: #10b981 !important;
+    }
+
+    .dark-popup .swal2-icon.swal2-warning {
+      border-color: #f59e0b !important;
+      color: #f59e0b !important;
+    }
+
+    .dark-popup .swal2-icon.swal2-error {
+      border-color: #ef4444 !important;
+      color: #ef4444 !important;
+    }
+
+    /* 취소 버튼 스타일 */
+    .swal2-popup .swal2-actions button.swal2-cancel {
+      background: #6b7280 !important;
+      color: #ffffff !important;
+    }
+
+    .swal2-popup .swal2-actions button.swal2-cancel:hover {
+      background: #4b5563 !important;
+    }
+
+    .dark-popup .swal2-actions button.swal2-cancel {
+      background: #6b7280 !important;
+      color: #ffffff !important;
+    }
+
+    .dark-popup .swal2-actions button.swal2-cancel:hover {
+      background: #4b5563 !important;
+    }
+  </style>
+
+
+
   <!-- 쿠키 배너 스타일 -->
   <style>
     body { 
