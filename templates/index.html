@@ -1553,9 +1553,12 @@
           </div>
         </div>
         
-        <div class="mt-6 flex justify-end space-x-2">
-          <button id="reset-settings" class="px-4 py-2 text-gray-600 hover:text-gray-800">초기화</button>
-          <button id="save-settings" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">저장</button>
+        <div class="mt-6 flex justify-end items-center space-x-2 whitespace-nowrap flex-nowrap">
+          <p class="text-xs text-gray-600 mr-4 whitespace-normal" style="max-width: 300px;">
+            선택을 완료한 후 '저장' 버튼을 눌러야 변경 사항이 유지됩니다.
+          </p>
+          <button id="reset-settings" class="px-4 py-2 text-gray-600 hover:text-gray-800 whitespace-nowrap">초기화</button>
+          <button id="save-settings" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 whitespace-nowrap">저장</button>
         </div>
       </div>
     </div>
@@ -1998,12 +2001,38 @@
         
         init() {
             if (this.isInitialized) return;
-            
+          
             this.createOfflineOverlay();
             this.setupEventListeners();
             this.startMonitoring();
             this.isInitialized = true;
+
         }
+
+        applyDarkThemeToOfflineOverlay() {
+            if (!this.overlay) return;
+            const isDark = document.body.classList.contains('dark-theme');
+            const popup = this.overlay.querySelector('div');
+
+            if (isDark) {
+                this.overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+                popup.style.background = '#2D2D2D';
+                popup.style.color = '#e5e7eb';
+                const title = popup.querySelector('h2');
+                const subtitle = popup.querySelector('p');
+                if (title) title.style.color = '#e5e7eb';
+                if (subtitle) subtitle.style.color = '#aaa';
+            } else {
+                this.overlay.style.backgroundColor = 'rgba(128, 128, 128, 0.8)';
+                popup.style.background = 'white';
+                popup.style.color = '#333';
+                const title = popup.querySelector('h2');
+                const subtitle = popup.querySelector('p');
+                if (title) title.style.color = '#333';
+                if (subtitle) subtitle.style.color = '#666';
+            }
+        }
+
         
         createOfflineOverlay() {
             // 기존 오버레이가 있다면 제거
@@ -2135,6 +2164,8 @@
                     this.checkConnection();
                 }
             });
+
+          this.applyDarkThemeToOfflineOverlay(); // 다크 테마 적용
         }
         
         async checkConnection() {
@@ -2312,6 +2343,69 @@
       background-color: rgba(59, 130, 246, 0.2) !important;
       color: #2563eb !important;
   }
+
+
+  /* 기본 (라이트 모드) 변수 */
+  :root {
+    --popup-background: white;
+    --popup-text-color: #333;
+    --popup-description-color: #666;
+    --url-display-background: #f8f9fa;
+    --url-display-border: #e9ecef;
+    --url-display-color: #495057;
+  }
+
+  /* 다크 모드 변수 */
+  body.dark-theme {
+    --popup-background: #2d2d2d; /* 어두운 배경 */
+    --popup-text-color: #e0e0e0; /* 밝은 글자색 */
+    --popup-description-color: #b0b0b0; /* 설명 글자색 */
+    --url-display-background: #3a3a3a; /* URL 배경 */
+    --url-display-border: #4a4a4a; /* URL 테두리 */
+    --url-display-color: #c0c0c0; /* URL 글자색 */
+  }
+
+  /* 팝업 컨테이너 */
+  .popup-fade-in {
+    background: var(--popup-background) !important;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5) !important; /* 다크 모드에서도 잘 보이도록 그림자 조정 */
+  }
+
+  /* 팝업 제목 */
+  .popup-fade-in h1 {
+    color: var(--popup-text-color) !important;
+    text-align: center;  /* 가운데 정렬 */
+    margin-bottom: 20px;
+    font-size: 24px;
+    font-weight: bold;
+  }
+
+  /* 팝업 설명 */
+  .popup-fade-in p {
+    color: var(--popup-description-color, #cbcbcb) !important;  /* 좀 더 진한 설명글 색 */
+    margin-bottom: 30px;
+    line-height: 1.6;
+    text-align: center;  /* 가운데 정렬 */
+  }
+
+  /* URL 표시 영역 */
+  .popup-fade-in div[style*="background: #f8f9fa"] {
+    background: var(--url-display-background) !important;
+    border: 2px solid var(--url-display-border) !important;
+    color: var(--url-display-color) !important;
+    text-align: center;  /* 가운데 정렬 */
+    font-family: monospace;
+  }
+
+  /* 버튼 그룹 */
+  .popup-fade-in > div > div {
+    display: flex;
+    justify-content: center;  /* 버튼 가운데 정렬 */
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/is-url-super-safe@1.0.6/dist/index.umd.js"></script>
 <script>
@@ -2386,21 +2480,23 @@
 
       // 제목
       const title = document.createElement('h1');
-      title.textContent = '잠시만요! 지금 외부 사이트로 빠져나가고 있나요?';
+      title.textContent = '외부 사이트로 빠져나가고 있나요?';
       title.style.cssText = `
           color: #333;
           margin-bottom: 20px;
           font-size: 24px;
           font-weight: bold;
+          text-align: center;
       `;
 
       // 설명
       const description = document.createElement('p');
-      description.innerHTML = '지금 이동하려는 페이지는 상정인사이드가 아닌 외부 페이지입니다.<br>안전한 페이지가 맞는지 다시 한번 확인해 주세요.';
+      description.innerHTML = '지금 이동하려는 페이지는 외부 페이지입니다.<br>안전한 페이지가 맞는지 다시 한번 확인해 주세요.';
       description.style.cssText = `
-          color: #666 !important;
+          color: #d1cdcd !important;
           margin-bottom: 30px;
           line-height: 1.6;
+          text-align: center;
       `;
 
       // URL 표시
@@ -2415,6 +2511,7 @@
           word-break: break-all;
           font-family: monospace;
           color: #495057;
+          text-align: center;
       `;
 
       // 버튼 그룹
@@ -2424,6 +2521,7 @@
           gap: 15px;
           justify-content: center;
           flex-wrap: wrap;
+          text-align: center;
       `;
 
       // 이동 버튼
