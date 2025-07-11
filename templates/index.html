@@ -1827,18 +1827,78 @@
 
   <main class="flex-grow max-w-2xl mx-auto px-4">
     <section class="mb-8">
-      <form id="post-form" class="bg-white p-6 rounded shadow space-y-4">
-        <h2 class="text-xl font-semibold">글 작성</h2>
-        <span class="text-xs text-gray-500">음란물, 차별·비하·혐오, 초상권·저작권 침해 게시물은 민형사상 책임이 따를 수 있습니다.</span>
-        <input id="title" name="title" placeholder="제목" class="w-full border rounded px-3 py-2"/>
-        <textarea id="content" name="content" placeholder="내용" class="w-full border rounded px-3 py-2"></textarea>
-        <div id="turnstile-wrapper">
-          <div id="turnstile-placeholder"></div>
-          <div id="turnstile-container" class="cf-turnstile" data-sitekey="0x4AAAAAABf0RFVAV6Ydy0GG" data-theme="light" data-callback="onCaptchaSuccess"></div>
-        </div>
-
-        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">작성하기</button>
+      <form id="post-form" class="bg-white p-6 rounded shadow space-y-4 max-w-2xl mx-auto">
+          <h2 class="text-xl font-semibold">글 작성</h2>
+          <span class="text-xs text-gray-500">음란물, 차별·비하·혐오, 초상권·저작권 침해 게시물은 민형사상 책임이 따를 수 있습니다.</span>
+          
+          <div class="relative">
+              <input id="title" name="title" placeholder="제목" class="w-full border rounded px-3 py-2 pr-20"/>
+              <div id="title-counter" class="absolute bottom-2 right-2 text-xs text-gray-500">
+                  0 / 50
+              </div>
+          </div>
+          
+          <div class="relative">
+              <textarea id="content" name="content" placeholder="내용" class="w-full border rounded px-3 py-2"></textarea>
+              <div id="content-counter" class="absolute bottom-2 right-2 text-xs text-gray-500">
+                  0 / 500
+              </div>
+          </div>
+          
+          <div id="turnstile-wrapper">
+              <div id="turnstile-placeholder"></div>
+              <div id="turnstile-container" class="cf-turnstile" data-sitekey="0x4AAAAAABf0RFVAV6Ydy0GG" data-theme="light" data-callback="onCaptchaSuccess"></div>
+          </div>
+          
+          <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">작성하기</button>
       </form>
+
+      <script>
+          // 글자 수 카운터 함수
+          function updateCounter(inputElement, counterElement, maxLength) {
+              const currentLength = inputElement.value.length;
+              const remaining = maxLength - currentLength;
+              
+              if (remaining >= 0) {
+                  counterElement.textContent = `${currentLength} / ${maxLength}`;
+                  counterElement.className = 'absolute bottom-2 right-2 text-xs text-gray-500';
+              } else {
+                  counterElement.textContent = `${currentLength} / ${maxLength} (${Math.abs(remaining)}자 초과)`;
+                  counterElement.className = 'absolute bottom-2 right-2 text-xs text-red-500 font-semibold';
+              }
+          }
+
+          // 제목 입력 필드 이벤트 리스너
+          const titleInput = document.getElementById('title');
+          const titleCounter = document.getElementById('title-counter');
+          
+          titleInput.addEventListener('input', function() {
+              updateCounter(this, titleCounter, 50);
+          });
+
+          // 내용 입력 필드 이벤트 리스너
+          const contentInput = document.getElementById('content');
+          const contentCounter = document.getElementById('content-counter');
+          
+          contentInput.addEventListener('input', function() {
+              updateCounter(this, contentCounter, 500);
+          });
+
+          // 폼 제출 시 검증
+          document.getElementById('post-form').addEventListener('submit', function(e) {
+              const titleLength = titleInput.value.length;
+              const contentLength = contentInput.value.length;
+              
+              if (titleLength > 50 || contentLength > 500) {
+                  e.preventDefault();
+              }
+          });
+
+          // Turnstile 콜백 함수 (필요한 경우)
+          function onCaptchaSuccess(token) {
+              console.log('Captcha success:', token);
+          }
+      </script>
       <script>
         // 글로벌 변수 선언
         let turnstileWidgetId = null;
