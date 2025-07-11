@@ -1036,7 +1036,7 @@ def create_post():
     turnstile_token = data.get("cf_turnstile_token")
     if not turnstile_token or not verify_turnstile_token(turnstile_token, get_real_ip()):
         log_activity("Turnstile 인증 실패", "400")
-        return jsonify({'success': False, 'message': 'Turnstile 인증 실패'}), 400
+        return jsonify({'success': False, 'message': '인증이 올바르게 처리되지 않았습니다. 새로고침 후 다시 시도해 주세요.'}), 400
 
 
     is_valid, message = is_valid_client()
