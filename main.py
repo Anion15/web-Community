@@ -1323,6 +1323,192 @@ def get_popular_posts_last_update():
         return jsonify({'success': False, 'message': '서버 오류가 발생했습니다.'}), 500
 
 
+
+# 핫토픽 코드
+# 핫토픽 캐시 (글로벌 변수)
+hot_topics_cache = {
+    'data': [],
+    'last_updated': None,
+    'updating': False
+}
+
+def get_hot_topics_data():
+    """핫토픽 데이터를 계산하는 함수"""
+    try:
+        # 한 달 전 날짜 계산
+        one_month_ago = datetime.now() - timedelta(days=30)
+        
+        # 한 달 내 게시물들 조회
+        posts_last_month = Post.query.filter(Post.date >= one_month_ago).all()
+        
+        if not posts_last_month:
+            return []
+        
+        hot_topics = []
+        
+        # 각 게시물에 대한 스코어 계산
+        scored_posts = []
+        for post in posts_last_month:
+            comments_count = post.comments.count()
+            likes_count = post.likes
+            total_score = comments_count + likes_count
+            
+            scored_posts.append({
+                'post': post,
+                'comments_count': comments_count,
+                'likes_count': likes_count,
+                'total_score': total_score
+            })
+        
+        # 1. 댓글+추천이 가장 많은 게시물 (종합 스코어 기준)
+        if scored_posts:
+            top_total = max(scored_posts, key=lambda x: x['total_score'])
+            hot_topics.append({
+                'id': top_total['post'].id,
+                'title': top_total['post'].title,
+                'content': top_total['post'].content,
+                'type': 'hot',
+                'likes_count': top_total['likes_count'],
+                'comments_count': top_total['comments_count'],
+                'created_at': top_total['post'].date.isoformat(),
+                'client_id': top_total['post'].client_id
+            })
+        
+        # 2. 댓글이 가장 많은 게시물
+        if scored_posts:
+            top_comments = max(scored_posts, key=lambda x: x['comments_count'])
+            # 중복 방지: 이미 추가된 게시물과 다른 경우만 추가
+            if top_comments['post'].id != top_total['post'].id:
+                hot_topics.append({
+                    'id': top_comments['post'].id,
+                    'title': top_comments['post'].title,
+                    'content': top_comments['post'].content,
+                    'type': 'comments',
+                    'likes_count': top_comments['likes_count'],
+                    'comments_count': top_comments['comments_count'],
+                    'created_at': top_comments['post'].date.isoformat(),
+                    'client_id': top_comments['post'].client_id
+                })
+        
+        # 3. 추천이 가장 많은 게시물
+        if scored_posts:
+            top_likes = max(scored_posts, key=lambda x: x['likes_count'])
+            # 중복 방지: 이미 추가된 게시물과 다른 경우만 추가
+            existing_ids = [topic['id'] for topic in hot_topics]
+            if top_likes['post'].id not in existing_ids:
+                hot_topics.append({
+                    'id': top_likes['post'].id,
+                    'title': top_likes['post'].title,
+                    'content': top_likes['post'].content,
+                    'type': 'likes',
+                    'likes_count': top_likes['likes_count'],
+                    'comments_count': top_likes['comments_count'],
+                    'created_at': top_likes['post'].date.isoformat(),
+                    'client_id': top_likes['post'].client_id
+                })
+        
+        # 상위 5개 게시물 추가 (중복 제거)
+        remaining_posts = [sp for sp in scored_posts if sp['post'].id not in [topic['id'] for topic in hot_topics]]
+        remaining_posts.sort(key=lambda x: x['total_score'], reverse=True)
+        
+        for post_data in remaining_posts[:5]:  # 최대 5개 더 추가
+            hot_topics.append({
+                'id': post_data['post'].id,
+                'title': post_data['post'].title,
+                'content': post_data['post'].content,
+                'type': 'hot',
+                'likes_count': post_data['likes_count'],
+                'comments_count': post_data['comments_count'],
+                'created_at': post_data['post'].date.isoformat(),
+                'client_id': post_data['post'].client_id
+            })
+        
+        return hot_topics
+        
+    except Exception as e:
+        print(f"핫토픽 데이터 계산 오류: {e}")
+        return []
+
+def update_hot_topics_cache():
+    """핫토픽 캐시를 업데이트하는 함수"""
+    global hot_topics_cache
+
+    if hot_topics_cache['updating']:
+        return
+
+    hot_topics_cache['updating'] = True
+
+    try:
+        with app.app_context():  # 🔥 여기가 핵심입니다
+            new_data = get_hot_topics_data()
+            hot_topics_cache['data'] = new_data
+            hot_topics_cache['last_updated'] = datetime.now()
+            print(f"핫토픽 캐시 업데이트 완료: {len(new_data)}개 항목")
+    except Exception as e:
+        print(f"핫토픽 캐시 업데이트 오류: {e}")
+    finally:
+        hot_topics_cache['updating'] = False
+
+
+def should_update_cache():
+    """캐시를 업데이트해야 하는지 확인"""
+    if not hot_topics_cache['data']:  # 데이터가 없으면 업데이트
+        return True
+    
+    if not hot_topics_cache['last_updated']:  # 마지막 업데이트 시간이 없으면 업데이트
+        return True
+    
+    # 마지막 업데이트로부터 24시간이 지났으면 업데이트
+    time_diff = datetime.now() - hot_topics_cache['last_updated']
+    return time_diff.total_seconds() > 86400  # 24시간 = 86400초
+
+def update_cache_in_background():
+    """백그라운드에서 캐시 업데이트"""
+    def update_task():
+        update_hot_topics_cache()
+    
+    thread = threading.Thread(target=update_task)
+    thread.daemon = True
+    thread.start()
+
+@app.route('/hot_topics', methods=['GET'])
+@check_abuse
+def get_hot_topics():
+    """핫토픽 API 엔드포인트"""
+    is_valid, message = is_valid_client()
+    if not is_valid:
+        log_activity("요청 url 변조 감지", "400")
+        return jsonify({'success': False, 'message': message}), 400
+    
+    ip = get_real_ip()
+    vpn_used = is_vpn(ip)
+    if vpn_used:
+        return jsonify({'success': False, 'message': 'VPN 또는 프록시가 활성화되어 있습니다. 사이트 이용을 위해 VPN을 해제해 주세요.'}), 403
+
+    try:
+        # 캐시 업데이트가 필요한지 확인
+        if should_update_cache():
+            # 백그라운드에서 캐시 업데이트
+            update_cache_in_background()
+            
+            # 캐시에 데이터가 없으면 즉시 계산
+            if not hot_topics_cache['data']:
+                hot_topics_cache['data'] = get_hot_topics_data()
+                hot_topics_cache['last_updated'] = datetime.now()
+        
+        # 캐시된 데이터 반환
+        return jsonify({
+            'success': True,
+            'topics': hot_topics_cache['data'],
+            'last_updated': hot_topics_cache['last_updated'].isoformat() if hot_topics_cache['last_updated'] else None
+        })
+        
+    except Exception as e:
+        log_activity("핫토픽 조회 오류", "500", str(e))
+        return jsonify({'success': False, 'message': '서버 오류가 발생했습니다.'}), 500
+
+# 앱 시작 시 초기 캐시 로드
 # 서버 실행
 if __name__ == '__main__':
+    update_cache_in_background() 
     app.run(host='0.0.0.0', port=5000, debug=True)
