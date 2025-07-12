@@ -19,9 +19,76 @@
   <script type="text/javascript" src="//t1.daumcdn.net/kas/static/ba.min.js" async></script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- SweetAlert2 라이브러리 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <!-- 모든 기본 팝업 오버라이드 -->
+  <style>
+    /* === GLOBAL RESET & OPTIMIZATION === */
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box; /* 전체 box-sizing 통일 */
+    }
+
+    /* === FONT RENDERING SMOOTHNESS === */
+    html, body {
+      -webkit-font-smoothing: antialiased; /* 크롬, 사파리 등 */
+      -moz-osx-font-smoothing: grayscale;  /* 파이어폭스 Mac */
+      text-rendering: optimizeLegibility;
+      scroll-behavior: smooth;
+      overscroll-behavior: none;
+      touch-action: manipulation;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    }
+
+    /* === IMAGE RENDERING QUALITY === */
+    img {
+      max-width: 100%;
+      display: block;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+    }
+
+    /* === SCROLL CONTAINER OPTIMIZATION === */
+    .scroll-container {
+      -webkit-overflow-scrolling: touch; /* iOS 부드러운 스크롤 */
+      overflow-y: auto;
+    }
+
+    /* === ANIMATION & TRANSITION PERFORMANCE === */
+    .animated {
+      will-change: transform, opacity;
+      transition: all 0.25s ease-in-out;
+    }
+
+    /* 이것때문에 기존 디자인 망가져서 주석처리함 */
+    /* === BUTTON & INPUT NORMALIZATION === */
+    /* button, input, textarea, select {
+      font: inherit;
+      background: none;
+      border: none;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+    } */
+
+    /* === SAFARI / IOS 특화 최적화 === */
+    @supports (-webkit-touch-callout: none) {
+      body {
+        -webkit-text-size-adjust: 100%; /* iOS 텍스트 확대 방지 */
+      }
+
+      .main-content {
+        -webkit-transform: translate3d(0, 0, 0);
+        -moz-transform: translate3d(0, 0, 0);
+        -ms-transform: translate3d(0, 0, 0);
+        -o-transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0);
+      }
+    }
+  </style>
+
   <script>
     // 현재 테마 확인 함수
     function getCurrentTheme() {
@@ -2003,115 +2070,158 @@
     
     
     
-    <!-- 🔥 새로운 핫토픽 섹션 -->
+<!-- 새로운 핫토픽 섹션 -->
     <style>
-        .hot-topic-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out;
-        }
-        .hot-topic-content.expanded {
-            max-height: 2000px;
-        }
-        .chevron-icon {
-            transition: transform 0.3s ease;
-        }
-        .chevron-icon.rotated {
-            transform: rotate(180deg);
-        }
-        .loading {
-            animation: spin 1s linear infinite;
-        }
+      .hot-topic-content {
+          overflow: hidden;
+          height: 0;
+          transition: height 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+          will-change: height;
+          backface-visibility: hidden;
+          transform: translateZ(0);
+          contain: layout style paint;
+      }
 
-        @keyframes spin {
-          0%   { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
+      .chevron-icon {
+          transition: transform 0.25s ease;
+          will-change: transform;
+          backface-visibility: hidden;
+          transform: translateZ(0);
+          contain: layout style paint;
+      }
+      .chevron-icon.rotated {
+          transform: translateZ(0) rotate(180deg);
+      }
+
+      .loading {
+          animation: spin 1s linear infinite;
+          transform: translateZ(0);
+          will-change: transform;
+          contain: layout style paint;
+      }
+
+      @keyframes spin {
+        0%   { transform: translateZ(0) rotate(0deg); }
+        100% { transform: translateZ(0) rotate(360deg); }
+      }
+
+      .loading {
+        animation: spin 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        transform: translateZ(0);
+        will-change: transform;
+        contain: layout style paint;
+      }
+
+      @keyframes fadeIn {
+        0% {
+          opacity: 0;
+          transform: translateZ(0) translateY(12px);
         }
-
-        .loading {
-          animation: spin 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        100% {
+          opacity: 1;
+          transform: translateZ(0) translateY(0);
         }
+      }
 
-        @keyframes fadeIn {
-          0% {
-            opacity: 0;
-            transform: translateY(12px);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
+      .fade-in {
+        animation: fadeIn 0.6s cubic-bezier(0.33, 1, 0.68, 1);
+        animation-fill-mode: both;
+        transform: translateZ(0);
+        will-change: transform, opacity;
+        contain: layout style paint;
+      }
 
-        .fade-in {
-          animation: fadeIn 0.6s cubic-bezier(0.33, 1, 0.68, 1);
-          animation-fill-mode: both;
-        }
+      /* 기본 핫토픽 카드 배경 */
+      .hot-topic-content .rounded-lg {
+        transition: background-color 0.3s;
+        transform: translateZ(0);
+        will-change: background-color;
+        contain: layout style paint;
+      }
 
+      /* 핫토픽 전체 배경 */
+      .dark-theme .hot-topic-content .rounded-lg {
+        background-color: #464646 !important;
+        border-color: #f97316 !important; /* orange-400 */
+        color: #e5e7eb !important;
+      }
 
-        /* 기본 핫토픽 카드 배경 */
-        .hot-topic-content .rounded-lg {
-          transition: background-color 0.3s;
-        }
+      /* 제목 텍스트 */
+      .dark-theme .hot-topic-content h4 {
+        color: #e5e7eb !important;
+      }
 
-        /* 핫토픽 전체 배경 */
-        .dark-theme .hot-topic-content .rounded-lg {
-          background-color: #464646 !important;
-          border-color: #f97316 !important; /* orange-400 */
-          color: #e5e7eb !important;
-        }
+      /* 본문 텍스트 */
+      .dark-theme .hot-topic-content p {
+        color: #e5e7eb !important;
+      }
 
-        /* 제목 텍스트 */
-        .dark-theme .hot-topic-content h4 {
-          color: #e5e7eb !important;
-        }
+      /* 날짜 및 메타 정보 */
+      .dark-theme .hot-topic-content .text-gray-500 {
+        color: #6b7280 !important;
+      }
 
-        /* 본문 텍스트 */
-        .dark-theme .hot-topic-content p {
-          color: #e5e7eb !important;
-        }
+      .dark-theme .hot-topic-content .text-gray-600 {
+        color: #9ca3af !important;
+      }
 
-        /* 날짜 및 메타 정보 */
-        .dark-theme .hot-topic-content .text-gray-500 {
-          color: #6b7280 !important;
-        }
+      /* 헤더 영역 */
+      .dark-theme #hot-topic-header {
+        background-color: #2d2d2d !important;
+        color: #e5e7eb !important;
+      }
 
-        .dark-theme .hot-topic-content .text-gray-600 {
-          color: #9ca3af !important;
-        }
+      /* 헤더 hover 효과 */
+      .dark-theme #hot-topic-header:hover {
+        background-color: #374151 !important; /* gray-700 */
+      }
 
-        /* 헤더 영역 */
-        .dark-theme #hot-topic-header {
-          background-color: #2d2d2d !important;
-          color: #e5e7eb !important;
-        }
+      /* 헤더 hover 효과 */
+      #hot-topic-header {
+        transform: translateZ(0);
+        will-change: background-color;
+        contain: layout style paint;
+      }
+      
+      #hot-topic-header:hover {
+        background-color: #ececec !important; /* gray-700 */
+      }
 
-        /* 헤더 hover 효과 */
-        .dark-theme #hot-topic-header:hover {
-          background-color: #374151 !important; /* gray-700 */
-        }
+      /* 로딩 아이콘 */
+      .dark-theme .hot-topic-content .loading {
+        color: #9ca3af !important;
+      }
 
-        /* 헤더 hover 효과 */
-        #hot-topic-header:hover {
-          background-color: #ececec !important; /* gray-700 */
-        }
+      /* 에러 상태 아이콘 */
+      .dark-theme .hot-topic-content #error-state svg {
+        color: #9ca3af !important;
+      }
 
-        /* 로딩 아이콘 */
-        .dark-theme .hot-topic-content .loading {
-          color: #9ca3af !important;
-        }
+      /* 각 항목 아이콘 (추천, 댓글) */
+      .dark-theme .hot-topic-content svg {
+        color: #9ca3af;
+      }
 
-        /* 에러 상태 아이콘 */
-        .dark-theme .hot-topic-content #error-state svg {
-          color: #9ca3af !important;
-        }
+      /* 애니메이션 중 헤더 비활성화 */
+      .animating {
+        pointer-events: none;
+        opacity: 0.7;
+        transform: translateZ(0);
+        will-change: opacity;
+      }
 
-        /* 각 항목 아이콘 (추천, 댓글) */
-        .dark-theme .hot-topic-content svg {
-          color: #9ca3af;
-        }
+      /* 모든 SVG 최적화 */
+      svg {
+        transform: translateZ(0);
+        will-change: transform;
+      }
 
-
+      /* 모든 버튼과 인터랙티브 요소 최적화 */
+      button, [role="button"], .cursor-pointer {
+        transform: translateZ(0);
+        will-change: transform, background-color, color;
+        contain: layout style paint;
+      }
     </style>
     <section class="mb-8">
         <div class="bg-white rounded shadow max-w-2xl mx-auto overflow-hidden">
@@ -2163,7 +2273,9 @@
         class HotTopicsManager {
             constructor() {
                 this.isExpanded = false;
+                this.isAnimating = false;
                 this.hotTopics = [];
+                this.transitionEndHandler = null;
                 this.init();
             }
 
@@ -2185,24 +2297,77 @@
             }
 
             toggleExpanded() {
-                this.isExpanded = !this.isExpanded;
+                // 이미 애니메이션 중이면 무시
+                if (this.isAnimating) {
+                    return;
+                }
+
+                this.isAnimating = true;
+                const header = document.getElementById('hot-topic-header');
+                header.classList.add('animating');
+                
                 const content = document.getElementById('hot-topic-content');
                 const chevron = document.getElementById('chevron-icon');
+                const isExpanded = content.classList.contains('expanded');
 
-                if (this.isExpanded) {
-                    content.classList.add('expanded');
-                    chevron.classList.add('rotated');
+                // 이전 리스너 정리
+                this.cleanupTransition(content);
+
+                // 타임아웃 설정 (애니메이션이 끝나지 않을 경우 대비)
+                const timeoutId = setTimeout(() => {
+                    this.resetAnimationState(content, header);
+                }, 600); // 애니메이션 시간보다 약간 길게
+
+                if (isExpanded) {
+                    // 축소
+                    content.style.height = content.scrollHeight + 'px';
+                    requestAnimationFrame(() => {
+                        content.style.height = '0px';
+                        chevron.classList.remove('rotated');
+                        content.classList.remove('expanded');
+                    });
                 } else {
-                    content.classList.remove('expanded');
-                    chevron.classList.remove('rotated');
+                    // 확장
+                    content.classList.add('expanded');
+                    const targetHeight = content.scrollHeight;
+                    content.style.height = '0px';
+                    requestAnimationFrame(() => {
+                        content.style.height = targetHeight + 'px';
+                        chevron.classList.add('rotated');
+                    });
                 }
+
+                // 한 번만 실행되는 이벤트 리스너
+                const onTransitionEnd = (e) => {
+                    if (e.target === content && e.propertyName === 'height') {
+                        clearTimeout(timeoutId);
+                        this.resetAnimationState(content, header);
+                        content.removeEventListener('transitionend', onTransitionEnd);
+                    }
+                };
+
+                content.addEventListener('transitionend', onTransitionEnd);
+            }
+
+            cleanupTransition(content) {
+                if (this.transitionEndHandler) {
+                    content.removeEventListener('transitionend', this.transitionEndHandler);
+                    this.transitionEndHandler = null;
+                }
+            }
+
+            resetAnimationState(content, header) {
+                if (content.classList.contains('expanded')) {
+                    content.style.height = 'auto';
+                }
+                this.isAnimating = false;
+                header.classList.remove('animating');
             }
 
             async loadHotTopics() {
                 this.showLoading();
                 
                 try {
-                    // 핫토픽 API 호출
                     const response = await fetch('/hot_topics', {
                         method: 'GET',
                         headers: {
@@ -2229,7 +2394,6 @@
                 }
             }
                 
-
             showLoading() {
                 document.getElementById('loading-state').classList.remove('hidden');
                 document.getElementById('error-state').classList.add('hidden');
@@ -2245,12 +2409,10 @@
             renderHotTopics() {
                 const listContainer = document.getElementById('hot-topic-list');
                 
-                // 로딩/에러 상태 숨기기
                 document.getElementById('loading-state').classList.add('hidden');
                 document.getElementById('error-state').classList.add('hidden');
                 listContainer.classList.remove('hidden');
 
-                // 기존 목록 초기화
                 listContainer.innerHTML = '';
 
                 // 핫토픽이 없는 경우
