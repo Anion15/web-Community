@@ -178,6 +178,14 @@ class Comment(db.Model):
     date = db.Column(db.DateTime(timezone=True), default=get_korean_time)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
 
+
+class BannedIP(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    ip_address = db.Column(db.String(45), unique=True, nullable=False)
+    reason = db.Column(db.String(200), nullable=True)
+    banned_at = db.Column(db.DateTime(timezone=True), default=get_korean_time)
+
+
 with app.app_context():
     db.create_all()
 
@@ -311,8 +319,8 @@ def is_valid_client():
     from flask import request
 
     # 허용된 Origin과 Referer 접두사
-    allowed_origin_prefix = 'https://conservative-tier-cathedral-drew.trycloudflare.com/'
-    allowed_referer_prefix = 'https://conservative-tier-cathedral-drew.trycloudflare.com/'
+    allowed_origin_prefix = 'https://grounds-remark-atomic-dealtime.trycloudflare.com/'
+    allowed_referer_prefix = 'https://grounds-remark-atomic-dealtime.trycloudflare.com/'
 
     # 요청 헤더에서 정보 추출
     origin = request.headers.get('Origin')
@@ -432,11 +440,34 @@ def verify_turnstile_token(token, remote_ip=None):
     result = resp.json()
     return result.get("success", False)
 
-
+def is_ip_banned(ip):
+    return BannedIP.query.filter_by(ip_address=ip).first() is not None
 
 @app.before_request
 def before_request_func():
     g.request_size = len(request.get_data())
+
+    client_ip = get_real_ip()
+    if is_ip_banned(client_ip):
+        log_activity("밴된 IP 접속 시도", "403", f"IP: {client_ip}")
+        return render_template_string("""
+            <!DOCTYPE html>
+            <html lang="ko">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <link rel='icon' type="image/png" href="https://raw.githubusercontent.com/Anion15/anion15.github.io/refs/heads/main/Preview.png">
+                <title>접근 제한</title>
+            </head>
+            <body>
+                <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background-color: #f8f9fa; color: #333; font-family: Arial, sans-serif;">
+                    <h1 style="font-size: 72px; margin-bottom: 0; text-align: center;">접근이 제한되었습니다.</h1>
+                    <p style="font-size: 18px; margin-top: 10px;">죄송합니다. 귀하의 IP 주소는 이 서비스에서 접근이 제한되었습니다.</p>
+                    <p style="font-size: 18px;">문의사항이 있으시면 관리자에게 문의해주세요. (Discord 사용자명: coding_09)</p>
+                </div>
+            </body>
+            </html>
+        """), 403
 
 @app.after_request
 def after_request_func(response):
@@ -801,46 +832,200 @@ def serviceterms():
 
 @app.errorhandler(404)
 def page_not_found(e):
-    log_activity("정의되지 않은 페이지 접속", "404")
     return render_template('404.html'), 404
+
 
 @app.route('/log', methods=['GET', 'POST'])
 def view_log():
     correct_password = ''
+    
+    # 액션 결과 메시지 초기화
+    action_message = None
+    action_type = None  # success, error, warning
 
     if request.method == 'POST':
         password = request.form.get('password')
-        if password != correct_password:
+        action = request.form.get('action')
+        
+        if password == correct_password:
+            session['logged_in'] = True
+            
+            # IP 밴/언밴 기능
+            if action in ['ban', 'unban']:
+                ip_to_ban = request.form.get('ip_address')
+                
+                if action == 'ban' and ip_to_ban:
+                    if ip_to_ban == '116.121.168.190':
+                        log_activity("특정 IP 밴 시도 거부", "200", f"시도 IP: {ip_to_ban}")
+                        action_message = f"IP {ip_to_ban}는 밴할 수 없습니다."
+                        action_type = "error"
+                    elif not is_ip_banned(ip_to_ban):
+                        new_banned_ip = BannedIP(ip_address=ip_to_ban, reason="관리자 수동 밴")
+                        db.session.add(new_banned_ip)
+                        db.session.commit()
+                        log_activity("IP 밴 성공", "200", f"IP: {ip_to_ban}")
+                        action_message = f"IP {ip_to_ban} 밴 성공."
+                        action_type = "success"
+                    else:
+                        log_activity("이미 밴된 IP 밴 시도", "200", f"IP: {ip_to_ban}")
+                        action_message = f"IP {ip_to_ban}는 이미 밴되어 있습니다."
+                        action_type = "warning"
+                        
+                elif action == 'unban' and ip_to_ban:
+                    banned_ip = BannedIP.query.filter_by(ip_address=ip_to_ban).first()
+                    if banned_ip:
+                        db.session.delete(banned_ip)
+                        db.session.commit()
+                        log_activity("IP 언밴 성공", "200", f"IP: {ip_to_ban}")
+                        action_message = f"IP {ip_to_ban} 언밴 성공."
+                        action_type = "success"
+                    else:
+                        log_activity("밴되지 않은 IP 언밴 시도", "200", f"IP: {ip_to_ban}")
+                        action_message = f"IP {ip_to_ban}는 밴되어 있지 않습니다."
+                        action_type = "warning"
+            
+            # 게시물 관련 기능
+            elif action == 'edit_post':
+                post_id = request.form.get('post_id')
+                new_content = request.form.get('new_content')
+                post = Post.query.get(post_id)
+                if post:
+                    old_content = post.content
+                    post.content = new_content
+                    db.session.commit()
+                    log_activity("게시물 수정", "200", f"게시물 ID: {post_id}")
+                    action_message = f"게시물 #{post_id} 수정 완료."
+                    action_type = "success"
+                else:
+                    action_message = f"게시물 #{post_id}를 찾을 수 없습니다."
+                    action_type = "error"
+                    
+            elif action == 'delete_post':
+                post_id = request.form.get('post_id')
+                post = Post.query.get(post_id)
+                if post:
+                    db.session.delete(post)
+                    db.session.commit()
+                    log_activity("게시물 삭제", "200", f"게시물 ID: {post_id}")
+                    action_message = f"게시물 #{post_id} 삭제 완료."
+                    action_type = "success"
+                else:
+                    action_message = f"게시물 #{post_id}를 찾을 수 없습니다."
+                    action_type = "error"
+                    
+            elif action == 'edit_post_author':
+                post_id = request.form.get('post_id')
+                new_author = request.form.get('new_author')
+                post = Post.query.get(post_id)
+                if post:
+                    old_author = post.client_id
+                    post.client_id = new_author
+                    db.session.commit()
+                    log_activity("게시물 작성자 수정", "200", f"게시물 ID: {post_id}, {old_author} -> {new_author}")
+                    action_message = f"게시물 #{post_id} 작성자를 '{new_author}'로 변경 완료."
+                    action_type = "success"
+                else:
+                    action_message = f"게시물 #{post_id}를 찾을 수 없습니다."
+                    action_type = "error"
+                    
+            elif action == 'edit_post_votes':
+                post_id = request.form.get('post_id')
+                new_upvotes = request.form.get('new_upvotes')
+                new_downvotes = request.form.get('new_downvotes')
+                post = Post.query.get(post_id)
+                if post:
+                    old_up = post.likes
+                    old_down = post.dislikes
+                    post.likes = int(new_upvotes) if new_upvotes else 0
+                    post.dislikes = int(new_downvotes) if new_downvotes else 0
+                    db.session.commit()
+                    log_activity("게시물 추천수 수정", "200", f"게시물 ID: {post_id}, 추천: {old_up}->{post.likes}, 비추천: {old_down}->{post.dislikes}")
+                    action_message = f"게시물 #{post_id} 추천수 수정 완료."
+                    action_type = "success"
+                else:
+                    action_message = f"게시물 #{post_id}를 찾을 수 없습니다."
+                    action_type = "error"
+            
+            # 댓글 관련 기능
+            elif action == 'edit_comment':
+                comment_id = request.form.get('comment_id')
+                new_content = request.form.get('new_content')
+                comment = Comment.query.get(comment_id)
+                if comment:
+                    old_content = comment.text
+                    comment.text = new_content
+                    db.session.commit()
+                    log_activity("댓글 수정", "200", f"댓글 ID: {comment_id}")
+                    action_message = f"댓글 #{comment_id} 수정 완료."
+                    action_type = "success"
+                else:
+                    action_message = f"댓글 #{comment_id}를 찾을 수 없습니다."
+                    action_type = "error"
+                    
+            elif action == 'delete_comment':
+                comment_id = request.form.get('comment_id')
+                comment = Comment.query.get(comment_id)
+                if comment:
+                    db.session.delete(comment)
+                    db.session.commit()
+                    log_activity("댓글 삭제", "200", f"댓글 ID: {comment_id}")
+                    action_message = f"댓글 #{comment_id} 삭제 완료."
+                    action_type = "success"
+                else:
+                    action_message = f"댓글 #{comment_id}를 찾을 수 없습니다."
+                    action_type = "error"
+                    
+            elif action == 'edit_comment_author':
+                comment_id = request.form.get('comment_id')
+                new_author = request.form.get('new_author')
+                comment = Comment.query.get(comment_id)
+                if comment:
+                    old_author = comment.client_id
+                    comment.client_id = new_author
+                    db.session.commit()
+                    log_activity("댓글 작성자 수정", "200", f"댓글 ID: {comment_id}, {old_author} -> {new_author}")
+                    action_message = f"댓글 #{comment_id} 작성자를 '{new_author}'로 변경 완료."
+                    action_type = "success"
+                else:
+                    action_message = f"댓글 #{comment_id}를 찾을 수 없습니다."
+                    action_type = "error"
+                    
+            return redirect(url_for('view_log'))
+            
+        else:
             log_activity("/log 비밀번호 틀림", "401")
-            return """
+            return render_template_string("""
+            <title>상정인사이드 관리자 패널 접근</title>
             <h3 style="display: flex; justify-content: center; align-items: center;">비밀번호가 틀렸습니다.</h3>
             <form method="POST" style="display: flex; justify-content: center; align-items: center;">
                 <input type="password" name="password" placeholder="비밀번호 입력">
                 <button type="submit">확인</button>
             </form>
-            """
+            """)
     else:
-        return """
-        <h3 style="display: flex; justify-content: center; align-items: center;">로그 보기 위한 비밀번호를 입력하세요:</h3>
-        <form method="POST" style="display: flex; justify-content: center; align-items: center;">
-            <input type="password" name="password" placeholder="비밀번호 입력">
-            <button type="submit">확인</button>
-        </form>
-        """
+        if not session.get('logged_in'):
+            return render_template_string("""
+            <title>상정인사이드 관리자 패널 접근</title>
+            <h3 style="display: flex; justify-content: center; align-items: center;">접근하려면 비밀번호를 입력하세요.</h3>
+            <form method="POST" style="display: flex; justify-content: center; align-items: center;">
+                <input type="password" name="password" placeholder="비밀번호 입력">
+                <button type="submit">확인</button>
+            </form>
+            """)
 
-
+    # 로그 파일 처리 (기존 코드와 동일)
     log_path = 'flask.log'
     if not os.path.exists(log_path):
         return "로그 파일이 존재하지 않습니다.", 404
 
-    # 필터 파라미터 가져오기
     filter_type = request.args.get('filter', 'today')
-
     log_activity(f"/log {filter_type} 접속", "200")
     
-    # 현재 시간 기준으로 필터링 날짜 계산
     now = datetime.now()
-    
+    start_date = None
+    end_date = None
+    title = ""
+
     if filter_type == 'today':
         start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
         title = "오늘"
@@ -857,17 +1042,15 @@ def view_log():
     elif filter_type == 'year':
         start_date = now - timedelta(days=365)
         title = "지난 1년"
-    else:  # all
+    else:
         start_date = None
         title = "전체"
 
-    # 로그 파일 읽기 및 필터링
     filtered_logs = []
     with open(log_path, 'r', encoding='utf-8', errors='replace') as f:
         for line in f:
             if start_date:
                 try:
-                    # "time: " 이후 날짜만 추출
                     log_date_str = line.split('time: ')[1].split(' ip:')[0].strip()
                     log_date = datetime.strptime(log_date_str, '%Y-%m-%d %H:%M:%S')
                     
@@ -882,59 +1065,698 @@ def view_log():
             else:
                 filtered_logs.append(line.strip())
 
-
-    # 최신 로그가 위에 오도록 역순 정렬
     filtered_logs.reverse()
+
+    banned_ips = BannedIP.query.all()
+    banned_ip_list = [b.ip_address for b in banned_ips]
+
+    # 액션 메시지 HTML 생성
+    action_message_html = ""
+    if action_message:
+        message_class = {
+            'success': 'success-message',
+            'error': 'error-message',
+            'warning': 'warning-message'
+        }.get(action_type, 'info-message')
+        action_message_html = f'<div class="{message_class}">{action_message}</div>'
 
     return f"""
     <!DOCTYPE html>
-    <html>
+    <html lang="ko">
     <head>
-        <title>상정인사이드 Log Viewer - {title}</title>
+        <title>상정인사이드 관리자 패널 - {title}</title>
         <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel='icon' type="image/png" href="https://raw.githubusercontent.com/Anion15/anion15.github.io/refs/heads/main/Preview.png">
         <style>
-            body {{ font-family: 'Courier New', monospace; margin: 20px; background-color: #f5f5f5; }}
-            .header {{ background-color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
-            .filters {{ margin-bottom: 20px; }}
-            .filters a {{ 
-                display: inline-block; margin-right: 10px; padding: 8px 15px; 
-                background-color: #007bff; color: white; text-decoration: none; 
-                border-radius: 4px; transition: background-color 0.3s;
+            /* 기존 스타일 + 추가 스타일 */
+            body {{
+                font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+                margin: 0;
+                padding: 20px;
+                background-color: #eef2f6;
+                color: #333;
+                line-height: 1.6;
             }}
-            .filters a:hover {{ background-color: #0056b3; }}
-            .filters a.active {{ background-color: #28a745; }}
-            .log-container {{ 
-                background-color: #2d3748; color: #e2e8f0; padding: 20px; 
-                border-radius: 8px; max-height: 80vh; overflow-y: auto;
-                font-size: 13px; line-height: 1.4;
+
+            .container {{
+                max-width: 1400px;
+                margin: 20px auto;
+                background-color: #ffffff;
+                border-radius: 10px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+                overflow: hidden;
             }}
-            .log-line {{ 
-                margin-bottom: 8px; padding: 4px 0; border-bottom: 1px solid #4a5568;
+
+            .header-section {{
+                padding: 25px 30px;
+                background-color: #f7f9fc;
+                border-bottom: 1px solid #e0e6ed;
+            }}
+
+            .page-title {{
+                font-size: 2em;
+                color: #2c3e50;
+                margin-top: 0;
+                margin-bottom: 20px;
+                text-align: center;
+            }}
+
+            /* 메시지 스타일 */
+            .success-message {{
+                background-color: #d4edda;
+                color: #155724;
+                border: 1px solid #c3e6cb;
+                border-radius: 5px;
+                padding: 12px;
+                margin-bottom: 20px;
+                font-weight: bold;
+            }}
+
+            .error-message {{
+                background-color: #f8d7da;
+                color: #721c24;
+                border: 1px solid #f5c6cb;
+                border-radius: 5px;
+                padding: 12px;
+                margin-bottom: 20px;
+                font-weight: bold;
+            }}
+
+            .warning-message {{
+                background-color: #fff3cd;
+                color: #856404;
+                border: 1px solid #ffeaa7;
+                border-radius: 5px;
+                padding: 12px;
+                margin-bottom: 20px;
+                font-weight: bold;
+            }}
+
+            /* 관리 패널 탭 */
+            .admin-tabs {{
+                display: flex;
+                border-bottom: 2px solid #e0e6ed;
+                margin-bottom: 25px;
+            }}
+
+            .admin-tab {{
+                padding: 12px 24px;
+                background-color: #f8f9fa;
+                border: none;
+                cursor: pointer;
+                font-size: 1em;
+                font-weight: bold;
+                color: #495057;
+                border-radius: 5px 5px 0 0;
+                margin-right: 5px;
+                transition: all 0.3s ease;
+            }}
+
+            .admin-tab.active {{
+                background-color: #007bff;
+                color: white;
+            }}
+
+            .admin-tab:hover {{
+                background-color: #e9ecef;
+            }}
+
+            .admin-tab.active:hover {{
+                background-color: #0056b3;
+            }}
+
+            /* 탭 컨텐츠 */
+            .tab-content {{
+                display: none;
+                padding: 20px;
+                background-color: #f8f9fa;
+                border-radius: 8px;
+                margin-bottom: 20px;
+            }}
+
+            .tab-content.active {{
+                display: block;
+            }}
+
+            /* 필터 버튼 */
+            .filters {{
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                margin-bottom: 20px;
+                justify-content: center;
+            }}
+
+            .filter-button {{
+                display: inline-block;
+                padding: 10px 20px;
+                background-color: #3498db;
+                color: white;
+                text-decoration: none;
+                border-radius: 5px;
+                transition: background-color 0.3s ease, transform 0.2s ease;
+                font-weight: bold;
+                font-size: 0.95em;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            }}
+
+            .filter-button:hover {{
+                background-color: #2980b9;
+                transform: translateY(-2px);
+            }}
+
+            .filter-button.active {{
+                background-color: #2ecc71;
+                box-shadow: 0 3px 8px rgba(46, 204, 113, 0.3);
+            }}
+
+            /* 통계 */
+            .stats {{
+                font-size: 1.1em;
+                font-weight: bold;
+                color: #555;
+                text-align: center;
+                margin-bottom: 25px;
+                padding: 10px;
+                background-color: #ecf0f1;
+                border-radius: 5px;
+            }}
+
+            /* 관리 섹션 */
+            .management-section {{
+                background-color: #f0f4f7;
+                padding: 20px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+                border: 1px solid #dbe3ed;
+            }}
+
+            .section-title {{
+                font-size: 1.3em;
+                color: #34495e;
+                margin-top: 0;
+                margin-bottom: 15px;
+                border-bottom: 2px solid #aebac8;
+                padding-bottom: 8px;
+            }}
+
+            /* 폼 스타일 */
+            .management-form {{
+                display: grid;
+                gap: 15px;
+                margin-bottom: 20px;
+            }}
+
+            .form-row {{
+                display: flex;
+                gap: 10px;
+                align-items: center;
+                flex-wrap: wrap;
+            }}
+
+            .form-group {{
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+            }}
+
+            .form-group label {{
+                font-weight: bold;
+                color: #495057;
+                font-size: 0.9em;
+            }}
+
+            .form-input {{
+                padding: 10px 12px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                font-size: 1em;
+                outline: none;
+                transition: border-color 0.3s ease, box-shadow 0.3s ease;
+                min-width: 150px;
+            }}
+
+            .form-input:focus {{
+                border-color: #3498db;
+                box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+            }}
+
+            .form-textarea {{
+                padding: 10px 12px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                font-size: 1em;
+                outline: none;
+                resize: vertical;
+                min-height: 80px;
+                font-family: inherit;
+            }}
+
+            .form-textarea:focus {{
+                border-color: #3498db;
+                box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+            }}
+
+            /* 버튼 스타일 */
+            .action-button {{
+                padding: 10px 18px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 1em;
+                font-weight: bold;
+                color: white;
+                transition: background-color 0.3s ease, transform 0.2s ease;
+                text-decoration: none;
+                display: inline-block;
+                text-align: center;
+            }}
+
+            .btn-primary {{ background-color: #007bff; }}
+            .btn-primary:hover {{ background-color: #0056b3; transform: translateY(-1px); }}
+
+            .btn-success {{ background-color: #28a745; }}
+            .btn-success:hover {{ background-color: #218838; transform: translateY(-1px); }}
+
+            .btn-danger {{ background-color: #dc3545; }}
+            .btn-danger:hover {{ background-color: #c82333; transform: translateY(-1px); }}
+
+            .btn-warning {{ background-color: #ffc107; color: #212529; }}
+            .btn-warning:hover {{ background-color: #e0a800; transform: translateY(-1px); }}
+
+            .btn-info {{ background-color: #17a2b8; }}
+            .btn-info:hover {{ background-color: #138496; transform: translateY(-1px); }}
+
+            .btn-secondary {{ background-color: #6c757d; }}
+            .btn-secondary:hover {{ background-color: #5a6268; transform: translateY(-1px); }}
+
+            /* 리스트 스타일 */
+            .item-list {{
+                list-style-type: none;
+                padding: 0;
+                margin-top: 15px;
+            }}
+
+            .item-list-item {{
+                background-color: #ffffff;
+                border: 1px solid #ddd;
+                padding: 15px;
+                margin-bottom: 10px;
+                border-radius: 5px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            }}
+
+            .item-info {{
+                flex-grow: 1;
+                margin-right: 15px;
+            }}
+
+            .item-info span {{
+                font-family: 'Consolas', 'Monaco', monospace;
+                font-size: 0.9em;
+                color: #444;
+                display: block;
+                margin-bottom: 5px;
+            }}
+
+            .item-actions {{
+                display: flex;
+                gap: 8px;
+            }}
+
+            .no-items {{
+                font-style: italic;
+                color: #777;
+                text-align: center;
+                padding: 20px;
+                background-color: #f9f9f9;
+                border-radius: 5px;
+            }}
+
+            /* 로그 컨테이너 */
+            .log-container {{
+                background-color: #2d3748;
+                color: #e2e8f0;
+                padding: 25px 30px;
+                border-radius: 0 0 10px 10px;
+                max-height: 60vh;
+                overflow-y: auto;
+                font-size: 0.9em;
+                line-height: 1.5;
+                box-sizing: border-box;
+            }}
+
+            .log-line {{
+                margin-bottom: 8px;
+                padding: 6px 0;
+                border-bottom: 1px solid #4a5568;
                 word-wrap: break-word;
+                white-space: pre-wrap;
+                font-family: 'Fira Code', 'JetBrains Mono', 'Courier New', monospace;
+                font-size: 0.85em;
             }}
-            .log-line:hover {{ background-color: #4a5568; }}
-            .stats {{ margin-bottom: 15px; font-weight: bold; color: #333; }}
+
+            .log-line:last-child {{
+                border-bottom: none;
+            }}
+
+            .log-line:hover {{
+                background-color: #4a5568;
+                cursor: text;
+            }}
+
+            .no-log-message {{
+                text-align: center;
+                padding: 20px;
+                font-style: italic;
+                color: #bbb;
+            }}
+
+            /* 반응형 */
+            @media (max-width: 768px) {{
+                body {{ padding: 10px; }}
+                .header-section {{ padding: 15px 20px; }}
+                .page-title {{ font-size: 1.6em; margin-bottom: 15px; }}
+                .filters {{ flex-direction: column; align-items: stretch; }}
+                .filter-button {{ text-align: center; padding: 10px; }}
+                .form-row {{ flex-direction: column; align-items: stretch; }}
+                .form-input {{ width: 100%; margin-bottom: 10px; min-width: auto; }}
+                .log-container {{ padding: 15px 20px; font-size: 0.8em; }}
+                .admin-tabs {{ flex-wrap: wrap; }}
+                .admin-tab {{ margin-bottom: 5px; }}
+                .item-list-item {{ flex-direction: column; align-items: stretch; }}
+                .item-info {{ margin-right: 0; margin-bottom: 10px; }}
+                .item-actions {{ justify-content: center; }}
+            }}
         </style>
+        <script>
+            function showTab(tabName) {{
+                // 모든 탭 비활성화
+                document.querySelectorAll('.admin-tab').forEach(tab => {{
+                    tab.classList.remove('active');
+                }});
+                document.querySelectorAll('.tab-content').forEach(content => {{
+                    content.classList.remove('active');
+                }});
+                
+                // 선택된 탭 활성화
+                document.querySelector(`[onclick="showTab('${{tabName}}')"]`).classList.add('active');
+                document.getElementById(tabName).classList.add('active');
+            }}
+            
+            // 페이지 로드 시 첫 번째 탭 활성화
+            window.onload = function() {{
+                showTab('ip-management');
+            }};
+        </script>
     </head>
     <body>
-        <div class="header">
-            <h2>상정인사이드 Log Viewer - {title}</h2>
-            <div class="filters">
-                <a href="/log?filter=today" {'class="active"' if filter_type == 'today' else ''}>오늘</a>
-                <a href="/log?filter=yesterday" {'class="active"' if filter_type == 'yesterday' else ''}>어제</a>
-                <a href="/log?filter=week" {'class="active"' if filter_type == 'week' else ''}>지난 1주일</a>
-                <a href="/log?filter=month" {'class="active"' if filter_type == 'month' else ''}>지난 1개월</a>
-                <a href="/log?filter=year" {'class="active"' if filter_type == 'year' else ''}>지난 1년</a>
-                <a href="/log?filter=all" {'class="active"' if filter_type == 'all' else ''}>전체</a>
+        <div class="container">
+            <div class="header-section">
+                <h2 class="page-title">상정인사이드 관리자 패널 - {title}</h2>
+                <a href="/logoutadmin" class="action-button btn-secondary" style="text-decoration: none;">로그아웃</a>
+                
+                {action_message_html}
+                
+                <div class="filters">
+                    <a href="/log?filter=today" class="filter-button {'active' if filter_type == 'today' else ''}">오늘</a>
+                    <a href="/log?filter=yesterday" class="filter-button {'active' if filter_type == 'yesterday' else ''}">어제</a>
+                    <a href="/log?filter=week" class="filter-button {'active' if filter_type == 'week' else ''}">지난 1주일</a>
+                    <a href="/log?filter=month" class="filter-button {'active' if filter_type == 'month' else ''}">지난 1개월</a>
+                    <a href="/log?filter=year" class="filter-button {'active' if filter_type == 'year' else ''}">지난 1년</a>
+                    <a href="/log?filter=all" class="filter-button {'active' if filter_type == 'all' else ''}">전체</a>
+                </div>
+                
+                <div class="stats">총 {len(filtered_logs)}개의 로그</div>
+
+                <!-- 관리 탭 -->
+                <div class="admin-tabs">
+                    <button class="admin-tab active" onclick="showTab('ip-management')">IP 관리</button>
+                    <button class="admin-tab" onclick="showTab('post-management')">게시물 관리</button>
+                    <!-- <button class="admin-tab" onclick="showTab('comment-management')">댓글 관리</button> -->
+                </div>
+
+                <!-- IP 관리 탭 -->
+                <div id="ip-management" class="tab-content active">
+                    <div class="management-section">
+                        <h4 class="section-title">IP 밴/언밴</h4>
+                        <form method="POST" class="management-form">
+                            <input type="hidden" name="password" value="{correct_password}">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="ip_address">IP 주소</label>
+                                    <input type="text" id="ip_address" name="ip_address" placeholder="192.168.1.1" required class="form-input">
+                                </div>
+                                <button type="submit" name="action" value="ban" class="action-button btn-danger">밴</button>
+                                <button type="submit" name="action" value="unban" class="action-button btn-success">언밴</button>
+                            </div>
+                        </form>
+                        
+                        <h4 class="section-title">현재 밴된 IP 목록</h4>
+                        <ul class="item-list">
+                            {"".join(f'''
+                                <li class="item-list-item">
+                                    <div class="item-info">
+                                        <span><strong>IP:</strong> {ip}</span>
+                                    </div>
+                                    <div class="item-actions">
+                                        <form method="POST" style="display: inline;">
+                                            <input type="hidden" name="password" value="{correct_password}">
+                                            <input type="hidden" name="ip_address" value="{ip}">
+                                            <button type="submit" name="action" value="unban" class="action-button btn-warning">언밴</button>
+                                        </form>
+                                    </div>
+                                </li>
+                            ''' for ip in banned_ip_list) if banned_ip_list else '<li class="no-items">밴된 IP가 없습니다.</li>'}
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 게시물 관리 탭 -->
+                <div id="post-management" class="tab-content">
+                    <div class="management-section">
+                        <h4 class="section-title">게시물 수정</h4>
+                        <form method="POST" class="management-form">
+                            <input type="hidden" name="password" value="{correct_password}">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="post_id_edit">게시물 ID</label>
+                                    <input type="number" id="post_id_edit" name="post_id" placeholder="123" required class="form-input">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group" style="flex-grow: 1;">
+                                    <label for="new_content">새 내용</label>
+                                    <textarea id="new_content" name="new_content" placeholder="새로운 게시물 내용을 입력하세요..." required class="form-textarea"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <button type="submit" name="action" value="edit_post" class="action-button btn-primary">게시물 수정</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="management-section">
+                        <h4 class="section-title">게시물 삭제</h4>
+                        <form method="POST" class="management-form">
+                            <input type="hidden" name="password" value="{correct_password}">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="post_id_delete">게시물 ID</label>
+                                    <input type="number" id="post_id_delete" name="post_id" placeholder="123" required class="form-input">
+                                </div>
+                                <button type="submit" name="action" value="delete_post" class="action-button btn-danger" onclick="return confirm('정말로 이 게시물을 삭제하시겠습니까?')">게시물 삭제</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="management-section">
+                        <h4 class="section-title">게시물 작성자 변경</h4>
+                        <form method="POST" class="management-form">
+                            <input type="hidden" name="password" value="{correct_password}">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="post_id_author">게시물 ID</label>
+                                    <input type="number" id="post_id_author" name="post_id" placeholder="123" required class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="new_author_post">새 작성자</label>
+                                    <input type="text" id="new_author_post" name="new_author" placeholder="새로운 작성자명" required class="form-input">
+                                </div>
+                                <button type="submit" name="action" value="edit_post_author" class="action-button btn-info">작성자 변경</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="management-section">
+                        <h4 class="section-title">게시물 추천수/비추천수 수정</h4>
+                        <form method="POST" class="management-form">
+                            <input type="hidden" name="password" value="{correct_password}">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="post_id_votes">게시물 ID</label>
+                                    <input type="number" id="post_id_votes" name="post_id" placeholder="123" required class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="new_upvotes">추천수</label>
+                                    <input type="number" id="new_upvotes" name="new_upvotes" placeholder="0" min="0" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="new_downvotes">비추천수</label>
+                                    <input type="number" id="new_downvotes" name="new_downvotes" placeholder="0" min="0" class="form-input">
+                                </div>
+                                <button type="submit" name="action" value="edit_post_votes" class="action-button btn-secondary">추천수 수정</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 댓글 관리 탭 -->
+                <div id="comment-management" class="tab-content">
+                    <div class="management-section">
+                        <h4 class="section-title">댓글 수정</h4>
+                        <form method="POST" class="management-form">
+                            <input type="hidden" name="password" value="{correct_password}">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="comment_id_edit">댓글 ID</label>
+                                    <input type="number" id="comment_id_edit" name="comment_id" placeholder="456" required class="form-input">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group" style="flex-grow: 1;">
+                                    <label for="new_comment_content">새 내용</label>
+                                    <textarea id="new_comment_content" name="new_content" placeholder="새로운 댓글 내용을 입력하세요..." required class="form-textarea"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <button type="submit" name="action" value="edit_comment" class="action-button btn-primary">댓글 수정</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="management-section">
+                        <h4 class="section-title">댓글 삭제</h4>
+                        <form method="POST" class="management-form">
+                            <input type="hidden" name="password" value="{correct_password}">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="comment_id_delete">댓글 ID</label>
+                                    <input type="number" id="comment_id_delete" name="comment_id" placeholder="456" required class="form-input">
+                                </div>
+                                <button type="submit" name="action" value="delete_comment" class="action-button btn-danger" onclick="return confirm('정말로 이 댓글을 삭제하시겠습니까?')">댓글 삭제</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="management-section">
+                        <h4 class="section-title">댓글 작성자 변경</h4>
+                        <form method="POST" class="management-form">
+                            <input type="hidden" name="password" value="{correct_password}">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="comment_id_author">댓글 ID</label>
+                                    <input type="number" id="comment_id_author" name="comment_id" placeholder="456" required class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="new_author_comment">새 작성자</label>
+                                    <input type="text" id="new_author_comment" name="new_author" placeholder="새로운 작성자명" required class="form-input">
+                                </div>
+                                <button type="submit" name="action" value="edit_comment_author" class="action-button btn-info">작성자 변경</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
             </div>
-            <div class="stats">총 {len(filtered_logs)}개의 로그</div>
-        </div>
-        <div class="log-container">
-            {"".join(f'<div class="log-line">{log.replace("<", "&lt;").replace(">", "&gt;")}</div>' for log in filtered_logs) if filtered_logs else '<div class="log-line">해당 기간에 로그가 없습니다.</div>'}
+            <div class="log-container">
+                {"".join(f'<div class="log-line">{log.replace("<", "&lt;").replace(">", "&gt;")}</div>' for log in filtered_logs) if filtered_logs else '<div class="no-log-message">해당 기간에 로그가 없습니다.</div>'}
+            </div>
         </div>
     </body>
     </html>
     """
+
+@app.route('/logoutadmin')
+def adminlogout():
+    if session.get('logged_in'):
+        log_activity("관리자 로그아웃", "200")
+        session.pop('logged_in', None)
+        return render_template_string("""
+        <!DOCTYPE html>
+        <html lang="ko">
+        <head>
+            <title>로그아웃 완료</title>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <link rel='icon' type="image/png" href="https://raw.githubusercontent.com/Anion15/anion15.github.io/refs/heads/main/Preview.png">
+            <style>
+                body {
+                    font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+                    margin: 0;
+                    padding: 20px;
+                    background-color: #eef2f6;
+                    color: #333;
+                    line-height: 1.6;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    min-height: 100vh;
+                }
+                .container {
+                    max-width: 500px;
+                    background-color: #ffffff;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+                    padding: 40px;
+                    text-align: center;
+                }
+                h3 {
+                    color: #2c3e50;
+                    margin-top: 0;
+                    margin-bottom: 20px;
+                    font-size: 1.5em;
+                }
+                .message {
+                    background-color: #d4edda;
+                    color: #155724;
+                    border: 1px solid #c3e6cb;
+                    border-radius: 5px;
+                    padding: 15px;
+                    margin-bottom: 20px;
+                    font-weight: bold;
+                }
+                .action-button {
+                    padding: 12px 24px;
+                    background-color: #007bff;
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 5px;
+                    font-weight: bold;
+                    transition: background-color 0.3s ease;
+                    display: inline-block;
+                }
+                .action-button:hover {
+                    background-color: #0056b3;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h3>로그아웃 완료</h3>
+                <div class="message">성공적으로 로그아웃되었습니다.</div>
+                <a href="/log" class="action-button">다시 로그인</a>
+            </div>
+        </body>
+        </html>
+        """)
+    else:
+        return redirect(url_for('view_log'))
+
 
 
 
