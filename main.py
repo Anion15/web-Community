@@ -462,8 +462,8 @@ def before_request_func():
             <body>
                 <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background-color: #f8f9fa; color: #333; font-family: Arial, sans-serif;">
                     <h1 style="font-size: 72px; margin-bottom: 0; text-align: center;">접근이 제한되었습니다.</h1>
-                    <p style="font-size: 18px; margin-top: 10px;">죄송합니다. 귀하의 IP 주소는 이 서비스에서 접근이 제한되었습니다.</p>
-                    <p style="font-size: 18px;">문의사항이 있으시면 관리자에게 문의해주세요. (Discord 사용자명: coding_09)</p>
+                    <p style="font-size: 18px; margin-top: 10px;">죄송합니다. 현재 이 서비스에 대한 접근 권한이 제한되어 있습니다.</p>
+                    <p style="font-size: 18px;">자세한 사항은 관리자에게 문의해 주세요. (Discord ID: coding_09)</p>
                 </div>
             </body>
             </html>
