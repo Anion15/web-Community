@@ -488,6 +488,7 @@ def index():
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <link rel='icon' type="image/png" href="https://raw.githubusercontent.com/Anion15/anion15.github.io/refs/heads/main/Preview.png">
                 <title>VPN 감지됨</title>
             </head>
             <body>
@@ -508,6 +509,7 @@ def index():
                 <head>
                     <meta charset="UTF-8">
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <link rel='icon' type="image/png" href="https://raw.githubusercontent.com/Anion15/anion15.github.io/refs/heads/main/Preview.png">
                     <title>허용되지 않는 브라우저입니다.</title>
                 </head>
                 <body>
@@ -591,6 +593,7 @@ def info():
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <link rel='icon' type="image/png" href="https://raw.githubusercontent.com/Anion15/anion15.github.io/refs/heads/main/Preview.png">
                 <title>허용되지 않는 브라우저입니다.</title>
             </head>
             <body>
@@ -623,6 +626,7 @@ def history():
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <link rel='icon' type="image/png" href="https://raw.githubusercontent.com/Anion15/anion15.github.io/refs/heads/main/Preview.png">
                 <title>허용되지 않는 브라우저입니다.</title>
             </head>
             <body>
@@ -655,6 +659,7 @@ def release_notes():
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <link rel='icon' type="image/png" href="https://raw.githubusercontent.com/Anion15/anion15.github.io/refs/heads/main/Preview.png">
                 <title>허용되지 않는 브라우저입니다.</title>
             </head>
             <body>
@@ -995,6 +1000,7 @@ def get_posts():
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <link rel='icon' type="image/png" href="https://raw.githubusercontent.com/Anion15/anion15.github.io/refs/heads/main/Preview.png">
                 <title>VPN 감지됨</title>
             </head>
             <body>
