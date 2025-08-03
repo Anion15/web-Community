@@ -1586,7 +1586,7 @@
     </script>
     <!--우클릭 이벤트 정의 끝-->
 
-    <!-- 설정 모달 -->
+<!-- 설정 모달 -->
     <div id="settings-modal" class="settings-modal">
       <div class="settings-content">
         <div class="flex justify-between items-center mb-6">
@@ -1609,6 +1609,29 @@
               <p class="text-sm text-gray-600">통계 및 정보를 실시간으로 업데이트합니다</p>
             </div>
             <div id="realtime-toggle" class="toggle-switch active"></div>
+          </div>
+
+          <div class="settings-item">
+            <div class="tooltip" data-tooltip="활성화 시 욕설이나 부적절한 단어를 자동으로 필터링합니다.">
+              <div class="flex items-center gap-2">
+                <h3 class="font-semibold">검열 기능</h3>
+                <svg width="38" height="22" viewBox="0 0 32 16">
+                  <defs>
+                    <linearGradient id="betaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                    </linearGradient>
+                    <filter id="dropShadow">
+                      <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="rgba(102, 126, 234, 0.3)"/>
+                    </filter>
+                  </defs>
+                  <rect width="32" height="16" rx="8" fill="url(#betaGradient)" filter="url(#dropShadow)" />
+                  <text x="16" y="11" text-anchor="middle" fill="white" font-size="8" font-weight="600" font-family="system-ui, -apple-system, sans-serif">BETA</text>
+                </svg>
+              </div>
+              <p class="text-sm text-gray-600">부적절한 표현을 감지하여 필터링합니다</p>
+            </div>
+            <div id="censorship-toggle" class="toggle-switch"></div>
           </div>
 
           <div class="settings-item">
@@ -1640,7 +1663,8 @@
       const defaultSettings = {
         rightClickEnabled: true,
         realtimeEnabled: true,
-        theme: 'system'  // 이미 시스템으로 설정되어 있음
+        censorshipEnabled: false,  // 검열 기능 기본값은 비활성화
+        theme: 'system'
       };
 
       // 설정 불러오기
@@ -1653,6 +1677,78 @@
       function saveSettings(settings) {
         localStorage.setItem('sjinside_settings', JSON.stringify(settings));
       }
+
+      // 검열 스크립트 로드/언로드 함수
+      function loadCensorshipScript() {
+        // 이미 로드된 스크립트가 있다면 제거
+        const existingScript = document.getElementById('bwf-script');
+        if (existingScript) {
+          existingScript.remove();
+        }
+
+        // 새 스크립트 태그 생성 및 로드
+        const script = document.createElement('script');
+        script.id = 'bwf-script';
+        script.src = '/static/bwf.js';
+        script.onload = function() {
+          console.log('검열 스크립트가 로드되었습니다.');
+        };
+        script.onerror = function() {
+          console.error('검열 스크립트 로드에 실패했습니다.');
+        };
+        document.head.appendChild(script);
+      }
+
+      function unloadCensorshipScript() {
+        const script = document.getElementById('bwf-script');
+        if (script) {
+          script.remove();
+          console.log('검열 스크립트가 제거되었습니다.');
+        }
+      }
+
+      // 우클릭 메뉴 활성화/비활성화 적용 함수
+      function applyRightClick(enabled) {
+        if (enabled) {
+          document.oncontextmenu = null;
+        } else {
+          document.oncontextmenu = function (e) {
+            e.preventDefault();
+            return false;
+          };
+        }
+      }
+
+      // 검열 기능 적용/해제
+      function applyCensorshipSetting(enabled) {
+        const rightClickToggle = document.getElementById('rightclick-toggle');
+
+        if (enabled) {
+          loadCensorshipScript();
+
+          // 검열 켜면 우클릭 비활성화
+          rightClickToggle.classList.remove('active');
+          alert("검열 기능이 활성화되면 우클릭 메뉴는 자동으로 비활성화됩니다.");
+          applyRightClick(false);
+
+          // 설정 객체도 업데이트
+          const currentSettings = loadSettings();
+          const updatedSettings = {
+            ...currentSettings,
+            rightClickEnabled: false,
+            censorshipEnabled: true
+          };
+          saveSettings(updatedSettings);
+        } else {
+          unloadCensorshipScript();
+
+          // 이전 설정 복원
+          const currentSettings = loadSettings();
+          applyRightClick(currentSettings.rightClickEnabled);
+        }
+      }
+
+
 
       // 테마 적용 함수 수정 (기존 applyTheme 함수 대체)
       function applyTheme(theme) {
@@ -1681,6 +1777,7 @@
         // 현재 설정값으로 UI 업데이트
         document.getElementById('rightclick-toggle').classList.toggle('active', settings.rightClickEnabled);
         document.getElementById('realtime-toggle').classList.toggle('active', settings.realtimeEnabled);
+        document.getElementById('censorship-toggle').classList.toggle('active', settings.censorshipEnabled);
         document.getElementById('theme-select').value = settings.theme;
         
         modal.classList.add('active');
@@ -1700,20 +1797,34 @@
         this.classList.toggle('active');
       });
 
+      document.getElementById('censorship-toggle').addEventListener('click', function() {
+        this.classList.toggle('active');
+      });
+
       // 설정 저장 시 Turnstile 테마도 업데이트 (기존 이벤트 리스너 수정)
       document.getElementById('save-settings').addEventListener('click', function() {
+        const previousSettings = loadSettings();
+
         const settings = {
           rightClickEnabled: document.getElementById('rightclick-toggle').classList.contains('active'),
           realtimeEnabled: document.getElementById('realtime-toggle').classList.contains('active'),
+          censorshipEnabled: document.getElementById('censorship-toggle').classList.contains('active'),
           theme: document.getElementById('theme-select').value
         };
         
         saveSettings(settings);
         applyTheme(settings.theme);
+        applyCensorshipSetting(settings.censorshipEnabled);  // 검열 설정 적용
         closeSettingsModal();
         
         // 저장 완료 알림
         alert('설정이 저장되었습니다!');
+        if (previousSettings.censorshipEnabled && !settings.censorshipEnabled) {
+          alert('검열 기능이 비활성화되어 페이지가 곧 새로 고쳐집니다.');
+          setTimeout(() => {
+            location.reload();
+          }, 2000);
+        }
       });
 
       // 설정 초기화 (시스템 설정으로 초기화)
@@ -1724,9 +1835,11 @@
           // UI 초기화 (시스템 설정으로)
           document.getElementById('rightclick-toggle').classList.add('active');
           document.getElementById('realtime-toggle').classList.add('active');
+          document.getElementById('censorship-toggle').classList.remove('active');  // 검열 기능은 기본 비활성화
           document.getElementById('theme-select').value = 'system';
           
           applyTheme('system');  // 시스템 테마로 적용
+          applyCensorshipSetting(false);  // 검열 기능 비활성화
           alert('설정이 초기화되었습니다!');
         }
       });
@@ -1744,6 +1857,8 @@
         // 기본 설정 로드
         const settings = loadSettings();
         applyTheme(settings.theme);
+        applyRightClick(settings.rightClickEnabled); 
+        applyCensorshipSetting(settings.censorshipEnabled);  // 검열 설정 적용
         
         // Turnstile 로드 대기
         const checkTurnstile = setInterval(() => {
