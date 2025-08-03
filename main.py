@@ -2,6 +2,7 @@
 from datetime import datetime, timedelta
 import os
 import ipaddress
+import base64
 
 try:
     from flask import Flask, render_template, request, jsonify, redirect, url_for, session, g, make_response, Response, render_template_string
@@ -557,7 +558,7 @@ def index():
         
         session_client_id = get_session_client_id()
         log_activity("메인루트 접속", "200")
-        html = render_template('index-on.html', client_id=session_client_id)
+        html = render_template('index.html', client_id=session_client_id)
 
         response = make_response(html)
         response.headers['Cache-Control'] = 'public, max-age=30'  # 30초 캐시
@@ -1856,62 +1857,58 @@ def get_posts():
 
 @app.route('/post', methods=['POST'])
 @limiter.limit("10 per minute", key_func=get_remote_address)
-@limiter.limit("15 per minute") # 추가적인 분당 제한
+@limiter.limit("15 per minute")
 @check_abuse
 def create_post():
-
     data = request.get_json()
     turnstile_token = data.get("cf_turnstile_token")
     if not turnstile_token or not verify_turnstile_token(turnstile_token, get_real_ip()):
         log_activity("Turnstile 인증 실패", "400")
         return jsonify({'success': False, 'message': '인증이 올바르게 처리되지 않았습니다. 새로고침 후 다시 시도해 주세요.'}), 400
 
-
     is_valid, message = is_valid_client()
     if not is_valid:
         log_activity("요청 url 변조 감지", "400")
         return jsonify({'success': False, 'message': message}), 400
-    
 
     ip = get_real_ip()
-    vpn_used = is_vpn(ip)
-    if vpn_used:
-        if vpn_used:
-            return jsonify({'success': False, 'message': 'VPN 또는 프록시가 활성화되어 있습니다. 사이트 이용을 위해 VPN을 해제해 주세요.'}), 403
+    if is_vpn(ip):
+        return jsonify({'success': False, 'message': 'VPN 또는 프록시가 활성화되어 있습니다. 사이트 이용을 위해 VPN을 해제해 주세요.'}), 403
 
-    
-    data = request.get_json()
     title = data.get('title')
     content = data.get('content')
-    client_id = get_session_client_id() # 세션에서 client_id 가져오기
+    client_id = get_session_client_id()
 
     if not validate_client_id(client_id):
         log_activity("요청 uuid 변조 감지", "400")
         return jsonify({'success': False, 'message': '유효하지 않은 client_id입니다.'}), 400
 
-    # 비정상 유니코드 포함 검사
     if contains_invalid_unicode(title) or contains_invalid_unicode(content):
         log_activity("요청문에 비정상 유니코드 감지", "400")
         return jsonify({'success': False, 'message': '제목이나 내용에 허용되지 않는 문자가 포함되어 있습니다.'}), 400
-
 
     if not title or len(title.strip()) < 1 or len(title) > 50:
         return jsonify({'success': False, 'message': '제목은 1자 이상 50자 이하로 입력해주세요.'}), 400
     if not content or len(content.strip()) < 1 or len(content) > 500:
         return jsonify({'success': False, 'message': '내용은 1자 이상 500자 이하로 입력해주세요.'}), 400
-    if is_spam_by_ip(): # IP 기반 도배 감지
+
+
+    import re
+    ibb_links = re.findall(r'https://i\.ibb\.co/[^\s]+', content)
+    if len(ibb_links) > 3:
+        log_activity("요청 변조하여 이미지 첨부 시도", "400")
+        return jsonify({'success': False, 'message': '이미지는 최대 3개까지 첨부할 수 있습니다.'}), 400
+
+    if is_spam_by_ip():
         log_activity("게시물 도배 감지", "429")
-        # 해당 IP 주소로 작성된 모든 게시물 삭제
-        posts_to_delete = Post.query.filter_by(client_id=client_id).all() # client_id 기반으로 삭제 (세션 유지 가정)
+        posts_to_delete = Post.query.filter_by(client_id=client_id).all()
         for post in posts_to_delete:
             db.session.delete(post)
         db.session.commit()
         return jsonify({'message': '도배 감지.'}), 429
-    
-    # 내용 기반 도배 감지 추가
+
     if is_content_spam(title, content):
         return jsonify({'success': False, 'message': '유사한 내용의 게시물이 최근에 작성되었습니다. 다른 내용을 입력해주세요.'}), 429
-
 
     new_post = Post(title=title, content=content, client_id=client_id)
     db.session.add(new_post)
@@ -1919,6 +1916,7 @@ def create_post():
     log_activity("게시물 업로드", "200", f"제목: {title[:20]}{'...' if len(title) > 20 else ''}")
 
     return jsonify({'success': True})
+
 
 
 
@@ -2334,6 +2332,59 @@ def get_hot_topics():
     except Exception as e:
         log_activity("핫토픽 조회 오류", "500", str(e))
         return jsonify({'success': False, 'message': '서버 오류가 발생했습니다.'}), 500
+
+
+
+#이미지 업로드 로직
+ip_upload_times = {}  # IP 주소별 최근 업로드 시각 리스트
+
+def is_image_upload_spam():
+    ip = get_real_ip()
+    now = datetime.now(timezone.utc)
+    window = timedelta(seconds=60)  # 60초 동안
+    limit = 3  # 3회 이상 업로드 금지
+
+    times = ip_upload_times.get(ip, [])
+    # 유효한 시각만 필터링
+    times = [t for t in times if now - t < window]
+    times.append(now)
+    ip_upload_times[ip] = times
+
+    return len(times) > limit
+
+IMGBB_API_KEY = "c384a28207cdc45d3abfcffda7539754"
+
+@app.route('/upload', methods=['POST'])
+@check_abuse
+def upload_image():
+    if is_image_upload_spam():
+        log_activity("같은 IP의 과도한 이미지 업로드", "429")
+        return jsonify({'error': '너무 많은 이미지 업로드가 감지되었습니다. 잠시 후 다시 시도해 주세요.'}), 429
+
+    if 'image' not in request.files:
+        return jsonify({'error': '이미지 파일이 없습니다'}), 400
+
+    image_file = request.files['image']
+    encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
+
+    payload = {
+        'key': IMGBB_API_KEY,
+        'image': encoded_image,
+        'name': image_file.filename
+    }
+
+    res = requests.post('https://api.imgbb.com/1/upload', data=payload)
+
+    if res.status_code == 200:
+        data = res.json()
+        log_activity("이미지 업로드 성공", "200")
+        return jsonify({'url': data['data']['url']})
+    else:
+        log_activity("이미지 업로드 실패", "500")
+        return jsonify({'error': 'imgbb 업로드 실패', 'details': res.text}), 500
+
+
+
 
 # 앱 시작 시 초기 캐시 로드
 # 서버 실행
