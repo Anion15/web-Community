@@ -868,7 +868,7 @@ def page_not_found(e):
 
 @app.route('/log', methods=['GET', 'POST'])
 def view_log():
-    correct_password = 'yxbh.rh0'
+    correct_password = ''
     
     # 액션 결과 메시지 초기화
     action_message = None
