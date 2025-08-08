@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import os
 import ipaddress
 import base64
+import time
 
 try:
     from flask import Flask, render_template, request, jsonify, redirect, url_for, session, g, make_response, Response, render_template_string
@@ -220,6 +221,30 @@ def get_real_ip():
     return request.remote_addr
 
 
+#tor 감지 리스트 업데이트
+def update_tor_exit_nodes():
+    global tor_exit_nodes
+    try:
+        url = "https://check.torproject.org/torbulkexitlist"
+        response = requests.get(url, timeout=5)
+        lines = response.text.splitlines()
+        tor_exit_nodes = set(line.strip() for line in lines if line and not line.startswith("#"))
+        print(f"[TOR] Exit Node 갱신 완료: {len(tor_exit_nodes)}개")
+    except Exception as e:
+        print(f"[TOR] 업데이트 실패: {e}")
+
+# 최초 1회 실행
+update_tor_exit_nodes()
+
+# 1시간마다 TOR Exit Node 리스트 갱신
+def schedule_tor_update():
+    while True:
+        time.sleep(60 * 60)  # 1시간마다
+        update_tor_exit_nodes()
+
+threading.Thread(target=schedule_tor_update, daemon=True).start()
+
+
 # 전역 변수로 VPN/차단된 IP 목록 관리
 vpn_list = []
 passed_list = []  # 통과한 IP 목록도 추가
@@ -238,11 +263,16 @@ def is_valid_ipv4(ip):
 
 def is_vpn(ip):
     # IPv4가 아닌 경우 차단
-    if not is_valid_ipv4(ip):
-        return True
+    # if not is_valid_ipv4(ip):
+    #     return True
 
     # 이미 VPN으로 확인된 IP인지 체크
     if ip in vpn_list:
+        return True
+    
+    # TOR Exit Node 여부 확인
+    if ip in tor_exit_nodes:
+        log_activity("TOR 브라우저 감지", "403")
         return True
     
     # 이미 통과한 IP인지 체크
@@ -838,7 +868,7 @@ def page_not_found(e):
 
 @app.route('/log', methods=['GET', 'POST'])
 def view_log():
-    correct_password = ''
+    correct_password = 'yxbh.rh0'
     
     # 액션 결과 메시지 초기화
     action_message = None
@@ -1970,6 +2000,8 @@ def vote_post(post_id):
 
     return jsonify({'success': True, 'likes': post.likes, 'dislikes': post.dislikes})
 
+RECAPTCHA_SECRET_KEY = ''
+
 @app.route('/post/<int:post_id>/comment', methods=['POST'])
 @check_abuse
 def comment_on_post(post_id):
@@ -1986,12 +2018,40 @@ def comment_on_post(post_id):
 
     data = request.get_json()
     text = data.get('text')
+    recaptcha_token = data.get('recaptcha_token')
     client_id = get_session_client_id() # 세션에서 client_id 가져오기
 
     if not validate_client_id(client_id):
         log_activity("요청 uuid 변조 감지", "400")
         return jsonify({'success': False, 'message': '유효하지 않은 client_id입니다.'}), 400
 
+    if not recaptcha_token:
+        return jsonify({'success': False, 'message': 'reCAPTCHA 토큰이 없습니다.'})
+
+    recaptcha_response = requests.post(
+        'https://www.google.com/recaptcha/api/siteverify',
+        data={
+            'secret': RECAPTCHA_SECRET_KEY,
+            'response': recaptcha_token,
+            'remoteip': ip
+        }
+    )
+
+    result = recaptcha_response.json()
+
+    if not result.get('success', False):
+        log_activity("reCAPTCHA 검증 실패", "400")
+        return jsonify({'success': False, 'message': 'reCAPTCHA 검증에 실패했습니다.'}), 400
+    
+    score = result.get('score', 0)
+    action = result.get('action', '')
+    # 보통 action이 클라이언트 execute 시 설정한 값과 맞는지도 확인함 ('comment' 등)
+    if score < 0.5 or action != 'comment':
+        log_activity(f"reCAPTCHA 점수 낮음 또는 action 불일치 (score: {score}, action: {action})", "403")
+        return jsonify({'success': False, 'message': '로봇으로 판단되어 댓글 작성이 제한되었습니다.'}), 403
+
+    log_activity(f"reCAPTCHA 검증 통과 (score: {score}, action: {action})", "200")
+    
     # 비정상 유니코드 포함 여부 검사
     if contains_invalid_unicode(text):
         log_activity("요청문에 비정상 유니코드 감지", "400")
@@ -2352,7 +2412,7 @@ def is_image_upload_spam():
 
     return len(times) > limit
 
-IMGBB_API_KEY = "c384a28207cdc45d3abfcffda7539754"
+IMGBB_API_KEY = ""
 
 @app.route('/upload', methods=['POST'])
 @check_abuse
