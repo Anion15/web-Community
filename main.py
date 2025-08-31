@@ -4,6 +4,9 @@ import os
 import ipaddress
 import base64
 import time
+from PIL import  Image, ImageDraw, ImageFont
+import io
+
 
 try:
     from flask import Flask, render_template, request, jsonify, redirect, url_for, session, g, make_response, Response, render_template_string
@@ -742,6 +745,11 @@ def release_notes():
     response.headers['Cache-Control'] = 'public, max-age=60'  # 60초 캐시
     return response
 
+@app.route('/report')
+@check_abuse
+def report():
+    return render_template('report.html')
+
 @app.route('/sitemap.xml')
 @check_abuse
 def sitemap():
@@ -886,7 +894,7 @@ def view_log():
                 ip_to_ban = request.form.get('ip_address')
                 
                 if action == 'ban' and ip_to_ban:
-                    if ip_to_ban == '116.121.168.190':
+                    if ip_to_ban == '':
                         log_activity("특정 IP 밴 시도 거부", "200", f"시도 IP: {ip_to_ban}")
                         action_message = f"IP {ip_to_ban}는 밴할 수 없습니다."
                         action_type = "error"
@@ -1721,7 +1729,7 @@ def adminlogout():
         <!DOCTYPE html>
         <html lang="ko">
         <head>
-            <title>로그아웃 완료</title>
+            <title>상정인사이드 관리자 - 로그아웃 완료</title>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <link rel='icon' type="image/png" href="https://raw.githubusercontent.com/Anion15/anion15.github.io/refs/heads/main/Preview.png">
@@ -1781,14 +1789,13 @@ def adminlogout():
                 <h3>로그아웃 완료</h3>
                 <div class="message">성공적으로 로그아웃되었습니다.</div>
                 <a href="/log" class="action-button">다시 로그인</a>
+                <a href="/" class="action-button" style="margin-left: 10px;">메인 페이지로</a>
             </div>
         </body>
         </html>
         """)
     else:
         return redirect(url_for('view_log'))
-
-
 
 
 @app.route('/register', methods=['POST'])
@@ -1851,6 +1858,7 @@ def get_posts():
             <!DOCTYPE html>
             <html lang="ko">
             <head>
+                <title>상정인사이드 - VPN 감지됨</title>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <link rel='icon' type="image/png" href="https://raw.githubusercontent.com/Anion15/anion15.github.io/refs/heads/main/Preview.png">
@@ -2325,7 +2333,7 @@ def update_hot_topics_cache():
     hot_topics_cache['updating'] = True
 
     try:
-        with app.app_context():  # 🔥 여기가 핵심입니다
+        with app.app_context():
             new_data = get_hot_topics_data()
             hot_topics_cache['data'] = new_data
             hot_topics_cache['last_updated'] = datetime.now()
@@ -2425,8 +2433,51 @@ def upload_image():
         return jsonify({'error': '이미지 파일이 없습니다'}), 400
 
     image_file = request.files['image']
-    encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
 
+    # 워터마크 추가
+    try:
+        # 메모리에서 이미지 열기
+        image = Image.open(image_file.stream).convert("RGB")
+        width, height = image.size
+
+        # 워터마크 설정
+        draw = ImageDraw.Draw(image)
+        text = "상정인사이드 - 자유로운 토론 커뮤니티 | https://commu.world"
+
+        # 폰트 (시스템에 따라 경로 다를 수 있음)
+        try:
+            font = ImageFont.truetype("/usr/share/fonts/truetype/nanum/NanumGothic.ttf", 20)
+        except:
+            font = ImageFont.load_default()
+
+        # textbbox 사용해서 텍스트 크기 구하기
+        bbox = draw.textbbox((0, 0), text, font=font)
+        textwidth = bbox[2] - bbox[0]
+        textheight = bbox[3] - bbox[1]
+
+        margin = 10
+        x = width - textwidth - margin
+        y = height - textheight - margin
+
+        # 그림자 추가 (검정색, 오른쪽 아래로 여러 위치에 겹치게)
+        shadow_offsets = [(2,2), (3,2), (2,3), (3,3)]  # 여러 위치에 그림자를 찍어서 두껍게
+        for ox, oy in shadow_offsets:
+            draw.text((x + ox, y + oy), text, font=font, fill=(0, 0, 0, 255))
+
+        # 반투명 흰색 텍스트 추가
+        draw.text((x, y), text, font=font, fill=(255, 255, 255, 200))
+
+
+        # 메모리에 저장
+        buffered = io.BytesIO()
+        image.save(buffered, format="JPEG")
+        encoded_image = base64.b64encode(buffered.getvalue()).decode('utf-8')
+
+    except Exception as e:
+        log_activity("error 워터마크 처리 실패", "429")
+        return jsonify({'error': '워터마크 처리 실패', 'details': str(e)}), 500
+
+    # ---- imgbb 업로드 ----
     payload = {
         'key': IMGBB_API_KEY,
         'image': encoded_image,
@@ -2442,7 +2493,6 @@ def upload_image():
     else:
         log_activity("이미지 업로드 실패", "500")
         return jsonify({'error': 'imgbb 업로드 실패', 'details': res.text}), 500
-
 
 
 
