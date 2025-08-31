@@ -17,6 +17,95 @@
   <meta name="twitter:image" content="https://raw.githubusercontent.com/Anion15/anion15.github.io/refs/heads/main/full-logo.png">
   <meta name="twitter:card" content="summary_large_image">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    (function () {
+      var bgColor = "rgba(10,11,15,0.96)"; // 배경색
+      var spinnerSize = 40; // px
+      var brandText = "Loading…"; // 중앙 텍스트 (빈 문자열로 비활성화)
+      var minShowMs = 300; // 최소 표시 시간
+      var safetyTimeoutMs = 10000; // 안전 타임아웃
+
+      // ==== 스타일 주입 ====
+      var css = `
+        html.__no_scroll, html.__no_scroll body { overflow: hidden !important; height: 100%; }
+        #__page_loader {
+          position: fixed; inset: 0; z-index: 2147483647;
+          display: grid; place-items: center;
+          background: ${bgColor}; color: #fff;
+          opacity: 1; transition: opacity .25s ease;
+        }
+        #__page_loader.__hide { opacity: 0; }
+        #__loader_inner { display: grid; gap: 14px; place-items: center; }
+        /* 스피너 */
+        #__spinner {
+          width: ${spinnerSize}px; height: ${spinnerSize}px;
+          border-radius: 50%;
+          border: 3px solid #ffffff22; border-top-color: #fff;
+          animation: __spin 1s linear infinite;
+        }
+        /* 감속 모션 환경 배려 */
+        @media (prefers-reduced-motion: reduce) {
+          #__spinner { animation: none; border-top-color: #ffffffcc; }
+        }
+        #__brand { font: 600 14px/1.2 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Apple SD Gothic Neo", "맑은 고딕", sans-serif; opacity:.9; letter-spacing:.2px;}
+        @keyframes __spin { to { transform: rotate(360deg); } }
+      `;
+      var styleEl = document.createElement("style");
+      styleEl.setAttribute("data-loader-style", "");
+      styleEl.textContent = css;
+      document.head.appendChild(styleEl);
+
+      // ==== 오버레이 DOM 생성 ====
+      var overlay = document.createElement("div");
+      overlay.id = "__page_loader";
+      overlay.setAttribute("role", "status");
+      overlay.setAttribute("aria-live", "polite");
+      overlay.innerHTML =
+        '<div id="__loader_inner" aria-label="페이지 로딩 중">' +
+        '<div id="__spinner" aria-hidden="true"></div>' +
+        (brandText ? '<div id="__brand">' + brandText + "</div>" : "") +
+        "</div>";
+
+      // body가 아직 없을 수도 있으므로 안전하게 추가
+      function mount() {
+        if (!document.body) { requestAnimationFrame(mount); return; }
+        document.documentElement.classList.add("__no_scroll");
+        document.body.appendChild(overlay);
+      }
+      mount();
+
+      var shownAt = Date.now();
+      var hidden = false;
+
+      function cleanup() {
+        if (hidden) return;
+        hidden = true;
+        overlay.classList.add("__hide");
+        overlay.addEventListener("transitionend", function () {
+          overlay.remove();
+          styleEl.remove();
+          document.documentElement.classList.remove("__no_scroll");
+        }, { once: true });
+      }
+
+      // 외부에서 수동으로 닫고 싶을 때: window.hidePageLoader()
+      window.hidePageLoader = function () {
+        var elapsed = Date.now() - shownAt;
+        var delay = Math.max(0, minShowMs - elapsed);
+        setTimeout(cleanup, delay);
+      };
+
+      // 페이지 완전 로드 후 자동 종료
+      window.addEventListener("load", function () {
+        window.hidePageLoader();
+      });
+
+      // 안전 타임아웃(예: load 이벤트가 영영 안 올 때)
+      setTimeout(function () {
+        if (document.getElementById("__page_loader")) window.hidePageLoader();
+      }, safetyTimeoutMs);
+    })();
+  </script>
   <style>
     body { font-family: 'Noto Sans KR', sans-serif; overflow-x: hidden; -ms-overflow-style: none; }
     ::-webkit-scrollbar { display: none;}
@@ -58,6 +147,70 @@
       background: #2d2d2d;
       color: #e5e7eb;
     }
+    
+    /* FAQ 섹션 다크 테마 - 더 구체적인 선택자 */
+    .dark-theme #faq h2 {
+      color: #e5e7eb !important;
+    }
+
+    .dark-theme #faq details[class*="group"] > summary {
+      color: #e5e7eb !important;
+    }
+
+    .dark-theme #faq .space-y-8 h3 {
+      color: #e5e7eb !important;
+    }
+
+    .dark-theme #faq .space-y-4 details summary span {
+      color: #e5e7eb !important;
+    }
+
+    .dark-theme #faq .space-y-4 details .group summary {
+      color: #e5e7eb !important;
+    }
+
+    .dark-theme #faq .text-gray-700 {
+      color: #9ca3af !important;
+    }
+
+    .dark-theme #faq .text-gray-300 {
+      color: #9ca3af !important;
+    }
+
+    #faq h2 {
+      color: #1f2937; /* text-gray-800 */
+    }
+
+    #faq details summary {
+      color: #1f2937; /* text-gray-800 */
+    }
+
+    #faq h3 {
+      color: #1f2937; /* text-gray-800 */
+    }
+
+    #faq .space-y-4 details summary {
+      color: #1f2937; /* text-gray-800 */
+    }
+
+    #faq .space-y-4 details .group summary span {
+      color: #1f2937; /* text-gray-800 */
+    }
+
+    #faq details div p,
+    #faq details div ul li {
+      color: #c3c3c3; /* text-gray-700 */
+    }
+
+    #faq details {
+      border-color: #d1d5db; /* border-gray-300 */
+    }
+
+    #faq a {
+      color: #2563eb; /* text-blue-600 */
+    }
+
+    
 
     .dark-theme .text-gray-600 {
       color: #9ca3af !important;
@@ -109,6 +262,7 @@
     .dark-theme {
       background-color: #1a1a1a !important;
     }
+
 
     .dark-theme main {
       background-color: transparent;
@@ -242,6 +396,7 @@
       background: rgba(45, 45, 45, 0.95);
     }
 
+
     .dark-theme .list-group-item {
       background-color: #374151;
       color: #e5e7eb;
@@ -250,6 +405,10 @@
 
     .dark-theme .list-group-item:hover {
       background-color: #4b5563;
+    }
+
+    .dark-theme .faq{
+      color: #e5e7eb !important;
     }
 
     .dark-theme .list-group-item:active {
@@ -373,7 +532,7 @@
   <header class="bg-white shadow py-4 px-6 mb-6 flex items-center justify-between">
     <!-- 왼쪽: 로고 -->
     <div class="flex items-center space-x-4">
-      <a href="https://anion15.github.io">
+      <a href="https://commu.world">
         <img src="https://raw.githubusercontent.com/Anion15/anion15.github.io/refs/heads/main/logo-.png" alt="logo" class="w-28 sm:w-32 md:w-36 lg:w-40 xl:w-44" />
       </a>
     </div>
@@ -404,8 +563,9 @@
 
     <section class="mb-16">
       <div class="text-center mb-6">
-        <h2 class="text-2xl font-bold text-gray-700">커뮤니티 이용 규칙</h2>
-        <p class="text-gray-600 mt-2">규칙 위반 시 <strong>1회 경고</strong>, 누적 <strong>3회 경고</strong> 시 <strong>영구 정지</strong>됩니다.</p>
+        <h2 class="text-2xl font-bold text-gray-700">제재 기준</h2>
+        <p class="text-gray-600 mt-2">위반 시 <strong>1회 경고</strong>, 누적 <strong>3회 경고</strong> 시 <strong>영구 정지</strong>됩니다.</p>
+        <p class="text-gray-600 mt-2">심각한 위반의 경우 경고 없이 즉시 영구정지될 수 있습니다.</p>
       </div>
 
       <div class="overflow-x-auto">
@@ -449,9 +609,243 @@
         </table>
       </div>
     </section>
+
+    <section id="faq" class="mx-auto max-w-4xl px-4 py-12 sm:py-16">
+        <h2 class="text-2xl sm:text-3xl font-semibold text-gray-100 dark:text-gray-800 mb-8">
+            자주 묻는 질문 (FAQ)
+        </h2>
+
+        <!-- 전체 -->
+        <details class="group mb-6 border rounded-lg border-gray-800 dark:border-gray-800">
+            <summary class="cursor-pointer px-5 py-5 text-lg font-medium text-gray-900 dark:text-gray-800 flex justify-between items-center">
+            전체 보기
+            <svg class="h-5 w-5 text-gray-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            </svg>
+            </summary>
+            <div class="px-6 pb-6 text-gray-700 dark:text-gray-300 space-y-8">
+
+            <!-- [카테고리] 사이트 이용 -->
+            <div class="py-4">
+                <h3 class="text-xl font-semibold mt-6 mb-4">사이트 이용</h3>
+
+                <div class="space-y-4">
+                    <details class="group">
+                        <summary class="flex justify-between cursor-pointer py-3">
+                        <span>여기는 어떤 사이트인가요?</span>
+                        <span class="text-gray-500 group-open:rotate-180 transition-transform">▼</span>
+                        </summary>
+                        <div class="mt-3 pl-6 py-2">
+                            <p>
+                            상정인사이드는 당신의 일상과 생각을 나누는 공간입니다.  
+                            로그인과 회원가입 절차 없이 완전 익명으로 소통할 수 있습니다.
+                            </p>
+                        </div>
+                    </details>
+
+                    <details class="group">
+                        <summary class="flex justify-between cursor-pointer py-3">
+                        <span>이번 달 핫토픽 선정 기준은 어떻게 되나요?</span>
+                        <span class="text-gray-500 group-open:rotate-180 transition-transform">▼</span>
+                        </summary>
+                        <div class="mt-3 pl-6 py-2 space-y-3">
+                        <p><strong>1. 대상 글</strong>: 최근 한 달 내 작성된 글만 포함됩니다.</p>
+                        <p><strong>2. 점수 계산</strong>: 점수 = 댓글 수 + 추천(좋아요) 수</p>
+                        <p><strong>3. 선정 방식</strong>:</p>
+                        <ul class="list-disc list-inside ml-4 space-y-1">
+                            <li>종합 1위: 댓글+추천 합산 점수가 가장 높은 글 → "hot"</li>
+                            <li>댓글 1위: 댓글이 가장 많은 글(종합 1위와 중복 제외) → "comments"</li>
+                            <li>추천 1위: 추천이 가장 많은 글(다른 순위와 중복 제외) → "likes"</li>
+                            <li>추가 인기글 5개: 남은 글 중 점수 상위 5개 → "hot"</li>
+                        </ul>
+                        <p><strong>4. 중복 방지</strong>: 같은 글이 여러 순위에 중복되지 않도록 함</p>
+                        <p><strong>5. 업데이트 주기</strong>: 하루 한 번 자동 계산 (필요 시 즉시 계산 가능)</p>
+                        </div>
+                    </details>
+
+                    <details class="group">
+                        <summary class="flex justify-between cursor-pointer py-3">
+                        <span>상정인사이드 부관리자가 되고 싶어요.</span>
+                        <span class="text-gray-500 group-open:rotate-180 transition-transform">▼</span>
+                        </summary>
+                        <div class="mt-3 pl-6 py-2 space-y-3">
+                        <p>부관리자는 다음 역할을 수행합니다.</p>
+                        <ul class="list-disc list-inside ml-4 space-y-1">
+                            <li>게시물 및 댓글 관리</li>
+                            <li>신고 처리</li>
+                            <li>코딩 작업</li>
+                        </ul>
+                        <p>지원 방법: <a href="https://discord.com/invite/bNJvy5weuc" class="text-blue-600 underline">공식 디스코드 서버</a> 가입 후 면접 진행</p>
+                        <p class="text-red-500 text-sm">※ 권한을 악용할 경우 영구정지 및 법적 대응 가능</p>
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+            <!-- [카테고리] 계정 · 개인정보 -->
+            <div class="py-4">
+                <h3 class="text-xl font-semibold mt-6 mb-4">계정 · 개인정보</h3>
+
+                <div class="space-y-4">
+                    <details class="group">
+                        <summary class="flex justify-between cursor-pointer py-3">
+                        <span>개인정보는 어떻게 처리하나요?</span>
+                        <span class="text-gray-500 group-open:rotate-180 transition-transform">▼</span>
+                        </summary>
+                        <div class="mt-3 pl-6 py-2">
+                            <p>
+                            자세한 내용은 <a href="https://commu.world/term" class="text-blue-600 underline">개인정보처리방침</a> 페이지에서 확인할 수 있습니다.
+                            </p>
+                        </div>
+                    </details>
+
+                    <details class="group">
+                        <summary class="flex justify-between cursor-pointer py-3">
+                        <span>내 개인정보나 게시글을 삭제하고 싶어요.</span>
+                        <span class="text-gray-500 group-open:rotate-180 transition-transform">▼</span>
+                        </summary>
+                        <div class="mt-3 pl-6 py-2">
+                            <p>
+                            DISCORD: coding_09 또는 <a href="mailto:admin@commu.world" class="text-blue-600 underline">admin@commu.world</a>로 요청하시면 됩니다.  
+                            보안상 삭제가 불가능한 항목은 그 사유와 법적 근거를 안내드립니다.
+                            </p>
+                        </div>
+                    </details>
+
+                    <details class="group">
+                        <summary class="flex justify-between cursor-pointer py-3">
+                        <span>영구정지 사유를 알고 싶어요.</span>
+                        <span class="text-gray-500 group-open:rotate-180 transition-transform">▼</span>
+                        </summary>
+                        <div class="mt-3 pl-6 py-2">
+                            <p>
+                            DISCORD: coding_09 또는 <a href="mailto:admin@commu.world" class="text-blue-600 underline">admin@commu.world</a>로 문의 시 안내드립니다.  
+                            단, 경찰·정부 지침에 따른 영구정지는 해제 불가입니다.
+                            </p>
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+            <!-- [카테고리] 버그 / 오류 -->
+            <div class="py-4">
+                <h3 class="text-xl font-semibold mt-6 mb-4">버그 · 오류</h3>
+
+                <div class="space-y-4">
+                    <details class="group">
+                        <summary class="flex justify-between cursor-pointer py-3">
+                        <span>디자인이 깨져 보여요.</span>
+                        <span class="text-gray-500 group-open:rotate-180 transition-transform">▼</span>
+                        </summary>
+                        <div class="mt-3 pl-6 py-2 space-y-2">
+                            <p>
+                            <strong>Safari 또는 iOS/macOS</strong>: 설정 → 빠른설정 → 실시간 모드 → 적용  
+                            </p>
+                            <p>
+                            <strong>기타 브라우저</strong>: 쿠키 삭제 후 새로고침 (간헐적으로 Cloudflare/TailwindCSS CDN 문제 발생 가능)  
+                            </p>
+                            <p>
+                            해결되지 않으면 <a href="/report" class="text-blue-600 underline">버그 신고</a> 페이지로 제보해주세요.
+                            </p>
+                        </div>
+                    </details>
+
+                    <details class="group">
+                        <summary class="flex justify-between cursor-pointer py-3">
+                        <span>작성 중인 댓글이 갑자기 사라져요.</span>
+                        <span class="text-gray-500 group-open:rotate-180 transition-transform">▼</span>
+                        </summary>
+                        <div class="mt-3 pl-6 py-2 space-y-2">
+                            <p>
+                            설정 → 정보 실시간 반영 끄기 → 적용  
+                            </p>
+                            <p>
+                            그래도 해결되지 않으면 <a href="/report" class="text-blue-600 underline">버그 신고</a> 페이지로 제보해주세요.
+                            </p>
+                        </div>
+                    </details>
+
+                    <details class="group">
+                        <summary class="flex justify-between cursor-pointer py-3">
+                        <span>텍스트 복사가 안 돼요.</span>
+                        <span class="text-gray-500 group-open:rotate-180 transition-transform">▼</span>
+                        </summary>
+                        <div class="mt-3 pl-6 py-2 space-y-2">
+                            <p>
+                            설정 → 정보 실시간 반영 끄기 → 적용  
+                            </p>
+                            <p>
+                            그래도 해결되지 않으면 <a href="/report" class="text-blue-600 underline">버그 신고</a> 페이지로 제보해주세요.
+                            </p>
+                        </div>
+                    </details>
+
+                    <details class="group">
+                        <summary class="flex justify-between cursor-pointer py-3">
+                        <span>검열 기능이 이상하게 작동해요.</span>
+                        <span class="text-gray-500 group-open:rotate-180 transition-transform">▼</span>
+                        </summary>
+                        <div class="mt-3 pl-6 py-2">
+                            <p>
+                            해당 기능은 베타 버전이며, 여러 버그가 발생할 수 있습니다. 정식 배포 전까지 개선 작업이 진행됩니다.
+                            </p>
+                        </div>
+                    </details>
+
+                    <details class="group">
+                        <summary class="flex justify-between cursor-pointer py-3">
+                        <span>게시물 작성 시 인증 오류 메시지가 뜹니다.</span>
+                        <span class="text-gray-500 group-open:rotate-180 transition-transform">▼</span>
+                        </summary>
+                        <div class="mt-3 pl-6 py-2 space-y-2">
+                            <p>
+                            작성란 아래 <em>사람인지 확인</em> 체크박스를 클릭하여 "성공!" 메시지가 뜬 후 작성 버튼을 누르세요.  
+                            </p>
+                            <p>
+                            체크박스가 보이지 않으면 새로고침 후 다시 시도하세요.  
+                            </p>
+                            <p>
+                            해결되지 않으면 <a href="/report" class="text-blue-600 underline">버그 신고</a> 페이지로 제보해주세요.
+                            </p>
+                        </div>
+                    </details>
+
+                    <details class="group">
+                        <summary class="flex justify-between cursor-pointer py-3">
+                        <span>추천/비추천 수가 NaN으로 표시됩니다.</span>
+                        <span class="text-gray-500 group-open:rotate-180 transition-transform">▼</span>
+                        </summary>
+                        <div class="mt-3 pl-6 py-2 space-y-2">
+                            <p>
+                            페이지 새로고림 후 확인하세요.  
+                            </p>
+                            <p>
+                            해결되지 않으면 <a href="/report" class="text-blue-600 underline">버그 신고</a> 페이지로 제보해주세요.
+                            </p>
+                        </div>
+                    </details>
+
+                    <details class="group">
+                        <summary class="flex justify-between cursor-pointer py-3">
+                        <span>버그 제보·사용자 신고·기능 제안은 어디서 하나요?</span>
+                        <span class="text-gray-500 group-open:rotate-180 transition-transform">▼</span>
+                        </summary>
+                        <div class="mt-3 pl-6 py-2 space-y-2">
+                            <p>
+                            <strong>버그·신고</strong>: <a href="/report" class="text-blue-600 underline">버그 신고</a> 페이지  
+                            </p>
+                            <p>
+                            <strong>기능 제안</strong>: DISCORD: coding_09 또는 <a href="mailto:admin@commu.world" class="text-blue-600 underline">admin@commu.world</a>
+                            </p>
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+            </div>
+        </details>
+    </section>
   </main>
-  <p class="text-gray-500 text-center">혹시 부관리자인데 디스코드 초대 링크를 못 받았나요?</br></p>
-  <p class="text-gray-500 text-center">그럼 'vieepanouie.help@gmail.com'으로 문의해주세요!</br></p>
   <h1>&nbsp;</h1>
   <h1>&nbsp;</h1>  
   <h1>&nbsp;</h1>
