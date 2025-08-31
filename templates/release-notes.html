@@ -17,6 +17,95 @@
   <meta name="twitter:image" content="https://raw.githubusercontent.com/Anion15/anion15.github.io/refs/heads/main/full-logo.png">
   <meta name="twitter:card" content="summary_large_image">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    (function () {
+      var bgColor = "rgba(10,11,15,0.96)"; // 배경색
+      var spinnerSize = 40; // px
+      var brandText = "Loading…"; // 중앙 텍스트 (빈 문자열로 비활성화)
+      var minShowMs = 300; // 최소 표시 시간
+      var safetyTimeoutMs = 10000; // 안전 타임아웃
+
+      // ==== 스타일 주입 ====
+      var css = `
+        html.__no_scroll, html.__no_scroll body { overflow: hidden !important; height: 100%; }
+        #__page_loader {
+          position: fixed; inset: 0; z-index: 2147483647;
+          display: grid; place-items: center;
+          background: ${bgColor}; color: #fff;
+          opacity: 1; transition: opacity .25s ease;
+        }
+        #__page_loader.__hide { opacity: 0; }
+        #__loader_inner { display: grid; gap: 14px; place-items: center; }
+        /* 스피너 */
+        #__spinner {
+          width: ${spinnerSize}px; height: ${spinnerSize}px;
+          border-radius: 50%;
+          border: 3px solid #ffffff22; border-top-color: #fff;
+          animation: __spin 1s linear infinite;
+        }
+        /* 감속 모션 환경 배려 */
+        @media (prefers-reduced-motion: reduce) {
+          #__spinner { animation: none; border-top-color: #ffffffcc; }
+        }
+        #__brand { font: 600 14px/1.2 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Apple SD Gothic Neo", "맑은 고딕", sans-serif; opacity:.9; letter-spacing:.2px;}
+        @keyframes __spin { to { transform: rotate(360deg); } }
+      `;
+      var styleEl = document.createElement("style");
+      styleEl.setAttribute("data-loader-style", "");
+      styleEl.textContent = css;
+      document.head.appendChild(styleEl);
+
+      // ==== 오버레이 DOM 생성 ====
+      var overlay = document.createElement("div");
+      overlay.id = "__page_loader";
+      overlay.setAttribute("role", "status");
+      overlay.setAttribute("aria-live", "polite");
+      overlay.innerHTML =
+        '<div id="__loader_inner" aria-label="페이지 로딩 중">' +
+        '<div id="__spinner" aria-hidden="true"></div>' +
+        (brandText ? '<div id="__brand">' + brandText + "</div>" : "") +
+        "</div>";
+
+      // body가 아직 없을 수도 있으므로 안전하게 추가
+      function mount() {
+        if (!document.body) { requestAnimationFrame(mount); return; }
+        document.documentElement.classList.add("__no_scroll");
+        document.body.appendChild(overlay);
+      }
+      mount();
+
+      var shownAt = Date.now();
+      var hidden = false;
+
+      function cleanup() {
+        if (hidden) return;
+        hidden = true;
+        overlay.classList.add("__hide");
+        overlay.addEventListener("transitionend", function () {
+          overlay.remove();
+          styleEl.remove();
+          document.documentElement.classList.remove("__no_scroll");
+        }, { once: true });
+      }
+
+      // 외부에서 수동으로 닫고 싶을 때: window.hidePageLoader()
+      window.hidePageLoader = function () {
+        var elapsed = Date.now() - shownAt;
+        var delay = Math.max(0, minShowMs - elapsed);
+        setTimeout(cleanup, delay);
+      };
+
+      // 페이지 완전 로드 후 자동 종료
+      window.addEventListener("load", function () {
+        window.hidePageLoader();
+      });
+
+      // 안전 타임아웃(예: load 이벤트가 영영 안 올 때)
+      setTimeout(function () {
+        if (document.getElementById("__page_loader")) window.hidePageLoader();
+      }, safetyTimeoutMs);
+    })();
+  </script>
   <style>
     body { font-family: 'Noto Sans KR', sans-serif; overflow-x: hidden; -ms-overflow-style: none; }
     ::-webkit-scrollbar { display: none;}
@@ -200,7 +289,7 @@
   <header class="bg-white shadow py-4 px-6 mb-6 flex items-center justify-between">
     <!-- 왼쪽: 로고 -->
     <div class="flex items-center space-x-4">
-      <a href="https://anion15.github.io">
+      <a href="https://commu.world">
         <img src="https://raw.githubusercontent.com/Anion15/anion15.github.io/refs/heads/main/logo-.png" alt="logo" class="w-28 sm:w-32 md:w-36 lg:w-40 xl:w-44" />
       </a>
     </div>
@@ -566,6 +655,66 @@
           <h2 class="text-xl font-semibold mb-2">🗓️ 2025년 8월 3일</h2>
           <ul class="list-disc list-inside text-gray-700 dark:text-gray-300">
             <li> <strong>이미지 업로드 기능 추가</strong></li>
+          </ul>
+        </div>
+        <div class="bg-white dark:bg-gray-800 shadow-md rounded-2xl p-6">
+          <h2 class="text-xl font-semibold mb-2">🗓️ 2025년 8월 4일</h2>
+          <ul class="list-disc list-inside text-gray-700 dark:text-gray-300">
+            <li> <strong>빠른설정 업데이트</strong></li>
+            <li> <strong>설정에 다양한 규칙 추가</strong></li>
+          </ul>
+        </div>
+        <div class="bg-white dark:bg-gray-800 shadow-md rounded-2xl p-6">
+          <h2 class="text-xl font-semibold mb-2">🗓️ 2025년 8월 5일</h2>
+          <ul class="list-disc list-inside text-gray-700 dark:text-gray-300">
+            <li> <strong>댓글 접기 기능 추가</strong></li>
+            <li> <strong>설정 팝업의 모바일 화면 최적화</strong></li>
+          </ul>
+        </div>
+        <div class="bg-white dark:bg-gray-800 shadow-md rounded-2xl p-6">
+          <h2 class="text-xl font-semibold mb-2">🗓️ 2025년 8월 7일</h2>
+          <ul class="list-disc list-inside text-gray-700 dark:text-gray-300">
+            <li> <strong>reCAPTCHAv3 추가 완료</strong></li>
+          </ul>
+        </div>
+        <div class="bg-white dark:bg-gray-800 shadow-md rounded-2xl p-6">
+          <h2 class="text-xl font-semibold mb-2">🗓️ 2025년 8월 8일</h2>
+          <ul class="list-disc list-inside text-gray-700 dark:text-gray-300">
+            <li> <strong>이미지 로직 업데이트 (이미지 지연 로딩 추가, Skeleton 로딩 추가)</strong></li>
+          </ul>
+        </div>
+        <div class="bg-white dark:bg-gray-800 shadow-md rounded-2xl p-6">
+          <h2 class="text-xl font-semibold mb-2">🗓️ 2025년 8월 9일</h2>
+          <ul class="list-disc list-inside text-gray-700 dark:text-gray-300">
+            <li> <strong>버그 발견 및 사용자 신고 접수 기능 추가 완료</strong></li>
+          </ul>
+        </div>
+        <div class="bg-white dark:bg-gray-800 shadow-md rounded-2xl p-6">
+          <h2 class="text-xl font-semibold mb-2">🗓️ 2025년 8월 10일</h2>
+          <ul class="list-disc list-inside text-gray-700 dark:text-gray-300">
+            <li> <strong>상정인사이드 새로운 도메인 구매 완료</strong></li>
+          </ul>
+        </div>
+        <div class="bg-white dark:bg-gray-800 shadow-md rounded-2xl p-6">
+          <h2 class="text-xl font-semibold mb-2">🗓️ 2025년 8월 11~12일</h2>
+          <ul class="list-disc list-inside text-gray-700 dark:text-gray-300">
+            <li>😁 <strong>commu.world 도메인 변경 완료 (sh9351님이 도와주심)</strong></li>
+            <li> <strong>상정인사이드 공식 관리자 이메일 추가 완료 (admin@commu.world)</strong></li>
+          </ul>
+        </div>
+        <div class="bg-white dark:bg-gray-800 shadow-md rounded-2xl p-6">
+          <h2 class="text-xl font-semibold mb-2">🗓️ 2025년 8월 15일</h2>
+          <ul class="list-disc list-inside text-gray-700 dark:text-gray-300">
+            <li> <strong>로딩 페이지 추가</strong></li>
+            <li> <strong>자주 하는 질문(FAQ) 추가</strong></li>
+          </ul>
+        </div>
+        <div class="bg-white dark:bg-gray-800 shadow-md rounded-2xl p-6">
+          <h2 class="text-xl font-semibold mb-2">🗓️ 2025년 8월 31일</h2>
+          <ul class="list-disc list-inside text-gray-700 dark:text-gray-300">
+            <li> <strong>이미지 하단에 워터마크 표시 추가</strong></li>
+            <li> <strong>작성 버튼 중복 클릭 버그 수정 (작성 버튼을 누르면 요청이 완료될 때까지 버튼을 숨깁니다.)</strong></li>
+            <li> <strong>해외 접속 허용</strong></li>
           </ul>
         </div>
       </div>
