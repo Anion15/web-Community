@@ -9,6 +9,95 @@
   <meta name="keywords" content="개인정보처리방침, 상정인사이드, 프라이버시">
   <meta name="author" content="anion15">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    (function () {
+      var bgColor = "rgba(10,11,15,0.96)"; // 배경색
+      var spinnerSize = 40; // px
+      var brandText = "Loading…"; // 중앙 텍스트 (빈 문자열로 비활성화)
+      var minShowMs = 300; // 최소 표시 시간
+      var safetyTimeoutMs = 10000; // 안전 타임아웃
+
+      // ==== 스타일 주입 ====
+      var css = `
+        html.__no_scroll, html.__no_scroll body { overflow: hidden !important; height: 100%; }
+        #__page_loader {
+          position: fixed; inset: 0; z-index: 2147483647;
+          display: grid; place-items: center;
+          background: ${bgColor}; color: #fff;
+          opacity: 1; transition: opacity .25s ease;
+        }
+        #__page_loader.__hide { opacity: 0; }
+        #__loader_inner { display: grid; gap: 14px; place-items: center; }
+        /* 스피너 */
+        #__spinner {
+          width: ${spinnerSize}px; height: ${spinnerSize}px;
+          border-radius: 50%;
+          border: 3px solid #ffffff22; border-top-color: #fff;
+          animation: __spin 1s linear infinite;
+        }
+        /* 감속 모션 환경 배려 */
+        @media (prefers-reduced-motion: reduce) {
+          #__spinner { animation: none; border-top-color: #ffffffcc; }
+        }
+        #__brand { font: 600 14px/1.2 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Apple SD Gothic Neo", "맑은 고딕", sans-serif; opacity:.9; letter-spacing:.2px;}
+        @keyframes __spin { to { transform: rotate(360deg); } }
+      `;
+      var styleEl = document.createElement("style");
+      styleEl.setAttribute("data-loader-style", "");
+      styleEl.textContent = css;
+      document.head.appendChild(styleEl);
+
+      // ==== 오버레이 DOM 생성 ====
+      var overlay = document.createElement("div");
+      overlay.id = "__page_loader";
+      overlay.setAttribute("role", "status");
+      overlay.setAttribute("aria-live", "polite");
+      overlay.innerHTML =
+        '<div id="__loader_inner" aria-label="페이지 로딩 중">' +
+        '<div id="__spinner" aria-hidden="true"></div>' +
+        (brandText ? '<div id="__brand">' + brandText + "</div>" : "") +
+        "</div>";
+
+      // body가 아직 없을 수도 있으므로 안전하게 추가
+      function mount() {
+        if (!document.body) { requestAnimationFrame(mount); return; }
+        document.documentElement.classList.add("__no_scroll");
+        document.body.appendChild(overlay);
+      }
+      mount();
+
+      var shownAt = Date.now();
+      var hidden = false;
+
+      function cleanup() {
+        if (hidden) return;
+        hidden = true;
+        overlay.classList.add("__hide");
+        overlay.addEventListener("transitionend", function () {
+          overlay.remove();
+          styleEl.remove();
+          document.documentElement.classList.remove("__no_scroll");
+        }, { once: true });
+      }
+
+      // 외부에서 수동으로 닫고 싶을 때: window.hidePageLoader()
+      window.hidePageLoader = function () {
+        var elapsed = Date.now() - shownAt;
+        var delay = Math.max(0, minShowMs - elapsed);
+        setTimeout(cleanup, delay);
+      };
+
+      // 페이지 완전 로드 후 자동 종료
+      window.addEventListener("load", function () {
+        window.hidePageLoader();
+      });
+
+      // 안전 타임아웃(예: load 이벤트가 영영 안 올 때)
+      setTimeout(function () {
+        if (document.getElementById("__page_loader")) window.hidePageLoader();
+      }, safetyTimeoutMs);
+    })();
+  </script>
   <style>
     body { font-family: 'Noto Sans KR', sans-serif; overflow-x: hidden; -ms-overflow-style: none; }
     ::-webkit-scrollbar { display: none;}
@@ -389,7 +478,7 @@
   <header class="bg-white shadow py-4 px-6 mb-6 flex items-center justify-between">
     <!-- 왼쪽: 로고 -->
     <div class="flex items-center space-x-4">
-      <a href="https://anion15.github.io">
+      <a href="https://commu.world">
         <img src="https://raw.githubusercontent.com/Anion15/anion15.github.io/refs/heads/main/logo-.png" alt="logo" class="w-28 sm:w-32 md:w-36 lg:w-40 xl:w-44" />
       </a>
     </div>
@@ -486,12 +575,10 @@
         </section>
 
         <section class="mb-8">
-          <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-gray-300 pb-2">제4조 (개인정보의 보호 및 암호화 저장)</h2>
+          <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-gray-300 pb-2">제4조 (개인정보의 보호 및 로그 저장)</h2>
           <p class="mb-4">수집된 정보는 다음 방식으로 안전하게 보호됩니다:</p>
           <ul class="list-disc pl-6 mb-6 space-y-2">
-            <li>공개키 기반 암호화(Public Key Encryption) 방식 적용</li>
-            <li>암호화된 정보는 운영자도 복호화 불가</li>
-            <li>서버 접근은 인증된 계정만 가능, 접근권한은 제한적으로 부여</li>
+            <li>서버 로그 접근은 운영자 및 지정 부운영자 가능, 접근권한은 제한적으로 부여</li>
             <li>서버는 방화벽 및 침입탐지시스템(IDS) 적용 상태 유지</li>
           </ul>
           <div id="more-m" class="bg-gray-50 p-4 rounded-lg">
@@ -572,7 +659,7 @@
           <div id="more" class="bg-blue-50 p-6 rounded-lg">
             <ul class="space-y-2">
               <li><strong>운영자:</strong> anion15 (GitHub 닉네임)</li>
-              <li><strong>이메일:</strong> <a href="mailto:vieepanouie.help@gmail.com" class="text-blue-600 hover:text-blue-800">vieepanouie.help@gmail.com</a></li>
+              <li><strong>이메일:</strong> <a href="mailto:admin@commu.world" class="text-blue-600 hover:text-blue-800">admin@commu.world</a></li>
               <li><strong>연락 목적:</strong> 개인정보 열람, 삭제 요청, 신고, 문의 등</li>
             </ul>
             <div id="more" class="mt-4 p-3 bg-yellow-50 rounded border-l-4 border-yellow-400">
