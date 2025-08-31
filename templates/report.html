@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ko" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel='icon' type="images/png" href="https://raw.githubusercontent.com/Anion15/anion15.github.io/refs/heads/main/Preview.png">
+  <title>상정인사이드 - 신고 폼</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    (function () {
+      var bgColor = "rgba(10,11,15,0.96)"; // 배경색
+      var spinnerSize = 40; // px
+      var brandText = "Loading…"; // 중앙 텍스트 (빈 문자열로 비활성화)
+      var minShowMs = 300; // 최소 표시 시간
+      var safetyTimeoutMs = 10000; // 안전 타임아웃
+
+      // ==== 스타일 주입 ====
+      var css = `
+        html.__no_scroll, html.__no_scroll body { overflow: hidden !important; height: 100%; }
+        #__page_loader {
+          position: fixed; inset: 0; z-index: 2147483647;
+          display: grid; place-items: center;
+          background: ${bgColor}; color: #fff;
+          opacity: 1; transition: opacity .25s ease;
+        }
+        #__page_loader.__hide { opacity: 0; }
+        #__loader_inner { display: grid; gap: 14px; place-items: center; }
+        /* 스피너 */
+        #__spinner {
+          width: ${spinnerSize}px; height: ${spinnerSize}px;
+          border-radius: 50%;
+          border: 3px solid #ffffff22; border-top-color: #fff;
+          animation: __spin 1s linear infinite;
+        }
+        /* 감속 모션 환경 배려 */
+        @media (prefers-reduced-motion: reduce) {
+          #__spinner { animation: none; border-top-color: #ffffffcc; }
+        }
+        #__brand { font: 600 14px/1.2 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Apple SD Gothic Neo", "맑은 고딕", sans-serif; opacity:.9; letter-spacing:.2px;}
+        @keyframes __spin { to { transform: rotate(360deg); } }
+      `;
+      var styleEl = document.createElement("style");
+      styleEl.setAttribute("data-loader-style", "");
+      styleEl.textContent = css;
+      document.head.appendChild(styleEl);
+
+      // ==== 오버레이 DOM 생성 ====
+      var overlay = document.createElement("div");
+      overlay.id = "__page_loader";
+      overlay.setAttribute("role", "status");
+      overlay.setAttribute("aria-live", "polite");
+      overlay.innerHTML =
+        '<div id="__loader_inner" aria-label="페이지 로딩 중">' +
+        '<div id="__spinner" aria-hidden="true"></div>' +
+        (brandText ? '<div id="__brand">' + brandText + "</div>" : "") +
+        "</div>";
+
+      // body가 아직 없을 수도 있으므로 안전하게 추가
+      function mount() {
+        if (!document.body) { requestAnimationFrame(mount); return; }
+        document.documentElement.classList.add("__no_scroll");
+        document.body.appendChild(overlay);
+      }
+      mount();
+
+      var shownAt = Date.now();
+      var hidden = false;
+
+      function cleanup() {
+        if (hidden) return;
+        hidden = true;
+        overlay.classList.add("__hide");
+        overlay.addEventListener("transitionend", function () {
+          overlay.remove();
+          styleEl.remove();
+          document.documentElement.classList.remove("__no_scroll");
+        }, { once: true });
+      }
+
+      // 외부에서 수동으로 닫고 싶을 때: window.hidePageLoader()
+      window.hidePageLoader = function () {
+        var elapsed = Date.now() - shownAt;
+        var delay = Math.max(0, minShowMs - elapsed);
+        setTimeout(cleanup, delay);
+      };
+
+      // 페이지 완전 로드 후 자동 종료
+      window.addEventListener("load", function () {
+        window.hidePageLoader();
+      });
+
+      // 안전 타임아웃(예: load 이벤트가 영영 안 올 때)
+      setTimeout(function () {
+        if (document.getElementById("__page_loader")) window.hidePageLoader();
+      }, safetyTimeoutMs);
+    })();
+  </script>
+
+</head>
+<body class="bg-gray-900 min-h-screen flex items-center justify-center p-4">
+  <main class="bg-white max-w-lg w-full rounded-lg shadow-md p-8">
+    <h1 id="formTitle" class="text-2xl font-bold mb-6 text-gray-800">버그 발견 신고</h1>
+
+    <div class="flex gap-6 mb-6">
+      <label class="inline-flex items-center space-x-2 cursor-pointer">
+        <input type="radio" name="reportType" value="bug" checked class="form-radio text-blue-600" />
+        <span class="text-gray-700 select-none">버그 신고</span>
+      </label>
+      <label class="inline-flex items-center space-x-2 cursor-pointer">
+        <input type="radio" name="reportType" value="user" class="form-radio text-blue-600" />
+        <span class="text-gray-700 select-none">사용자 신고</span>
+      </label>
+    </div>
+
+    <form id="bugForm" action="https://formsubmit.co/admin@commu.world" method="POST" enctype="multipart/form-data" class="space-y-6">
+
+      <div id="bugFields">
+        <label class="block text-gray-700 font-medium">
+          발견하신 버그 설명 (최대한 자세히 서술해주세요):
+          <textarea name="description" rows="5" required
+            class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 resize-none"></textarea>
+        </label>
+
+        <label class="block text-gray-700 font-medium">
+          추가 설명:
+          <textarea name="additional_info" rows="3"
+            class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 resize-none"></textarea>
+        </label>
+
+        <label class="block text-gray-700 font-medium mt-6">
+          작성자분 디스코드 사용자명:
+          <input type="text" name="discord_name"
+            class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 h-12" />
+        </label>
+
+        <label class="block text-gray-700 font-medium mt-6">
+          스크린샷 파일 첨부 (선택):
+          <input type="file" name="screenshot" accept="image/*"
+            class="mt-1 block w-full text-gray-600" />
+        </label>
+      </div>
+
+      <div id="userFields" class="hidden space-y-4">
+        <label class="block text-gray-700 font-medium">
+          신고할 작성자의 ID:
+          <input type="text" name="reported_user_id"
+            class="mt-1 block w-full h-12 text-lg font-semibold rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200" />
+        </label>
+
+        <label class="block text-gray-700 font-medium">
+          신고하는 게시물 또는 댓글에 대한 스크린샷:
+          <input type="file" name="reported_screenshot" accept="image/*"
+            class="mt-1 block w-full text-gray-600" />
+        </label>
+
+        <p class="text-sm text-gray-500 italic">
+          신고자에 대하여 신변을 보호하기 위해 보내주신 모든 정보는 익명의 신고자로 처리합니다.<br />
+          같은 내용으로 반복하여 신고할 시 처리가 늦어지거나 상황에 따라서 취소될 수 있습니다.
+        </p>
+      </div>
+
+      <input type="hidden" name="user_ip" id="user_ip" />
+      <input type="hidden" name="user_agent" id="user_agent" />
+      <input type="hidden" name="report_type" id="report_type" value="bug" />
+
+      <button type="submit"
+        class="w-full py-3 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors duration-200">
+        제출하기
+      </button>
+
+    </form>
+
+    <p class="mt-6 text-sm text-gray-500">
+      개인정보 처리 기간: 신고 내용이 완전히 처리되거나 3개월 지난 경우, 제출된 개인정보는 무조건 삭제됩니다.<br />
+      (개인정보처리방침 및 서비스 이용 약관 링크를 참고하세요.)
+    </p>
+  </main>
+
+  <script>
+    async function setUserInfo() {
+      const ua = navigator.userAgent;
+      document.getElementById('user_agent').value = ua;
+
+      let ip = '알수없음';
+      try {
+        const res = await fetch('https://api.ipify.org?format=json');
+        const data = await res.json();
+        ip = data.ip;
+      } catch (e) {
+        console.warn('IP 조회 실패:', e);
+      }
+      document.getElementById('user_ip').value = ip;
+    }
+
+    function updateFormByType() {
+      const type = document.querySelector('input[name="reportType"]:checked').value;
+      const formTitle = document.getElementById('formTitle');
+      const bugFields = document.getElementById('bugFields');
+      const userFields = document.getElementById('userFields');
+      const reportTypeInput = document.getElementById('report_type');
+
+      if (type === 'bug') {
+        formTitle.textContent = '버그 발견 신고';
+        bugFields.classList.remove('hidden');
+        userFields.classList.add('hidden');
+        reportTypeInput.value = 'bug';
+
+        // userFields 안 필드 required 해제
+        const reportedUserId = userFields.querySelector('input[name="reported_user_id"]');
+        if (reportedUserId) reportedUserId.required = false;
+
+        const reportedScreenshot = userFields.querySelector('input[name="reported_screenshot"]');
+        if (reportedScreenshot) reportedScreenshot.required = false;
+
+        // bugFields 안 description 필수로
+        const description = bugFields.querySelector('textarea[name="description"]');
+        if (description) description.required = true;
+      } else {
+        formTitle.textContent = '사용자 신고';
+        bugFields.classList.add('hidden');
+        userFields.classList.remove('hidden');
+        reportTypeInput.value = 'user';
+
+        // userFields 안 필드 required 설정
+        const reportedUserId = userFields.querySelector('input[name="reported_user_id"]');
+        if (reportedUserId) reportedUserId.required = true;
+
+        const reportedScreenshot = userFields.querySelector('input[name="reported_screenshot"]');
+        if (reportedScreenshot) reportedScreenshot.required = false;
+
+        // bugFields 안 description 필수 해제
+        const description = bugFields.querySelector('textarea[name="description"]');
+        if (description) description.required = false;
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      setUserInfo();
+      document.querySelectorAll('input[name="reportType"]').forEach(radio => {
+        radio.addEventListener('change', updateFormByType);
+      });
+
+      updateFormByType(); // 초기 상태에 맞춰 required 속성 조정
+    });
+  </script>
+
+</body>
+</html>
